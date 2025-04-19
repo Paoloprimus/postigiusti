@@ -16,7 +16,7 @@ export default function Login() {
     setError('');
 
     try {
-      // ✅ Controllo se l'email è autorizzata nella tabella "invites"
+      // 🔍 Verifica se l'email è tra gli invitati
       const { data: invite, error: inviteError } = await supabase
         .from('invites')
         .select('email')
@@ -24,7 +24,8 @@ export default function Login() {
         .maybeSingle();
 
       if (inviteError) {
-        setError('Errore nella verifica dell’invito.');
+        console.error('Errore verifica invito:', inviteError);
+        setError('Errore durante la verifica dell’invito.');
         setLoading(false);
         return;
       }
@@ -35,27 +36,22 @@ export default function Login() {
         return;
       }
 
-      // ✅ Login vero e proprio
+      // 🔐 Login
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      console.log('DATA:', data);
-      console.log('ERROR:', error);
-      console.error('Errore da Supabase:', error);
-      console.log('Dati restituiti:', data);
       console.log('Risposta Supabase:', { data, error });
 
-
       if (error) {
-        console.error('Errore login:', error.message); // <== aggiunto
+        console.error('Errore login:', error.message);
         setError(error.message);
       } else {
         router.push('/dashboard');
       }
-    } catch (error) {
-      console.error('Errore durante il login:', error);
+    } catch (err) {
+      console.error('Errore generico login:', err);
       setError('Errore inaspettato durante l’accesso.');
     } finally {
       setLoading(false);
@@ -110,7 +106,7 @@ export default function Login() {
         <p>
           Non hai un account?{' '}
           <Link href="/signup" className="text-blue-500 hover:underline">
-          Registrati
+            Registrati
           </Link>
         </p>
       </div>
