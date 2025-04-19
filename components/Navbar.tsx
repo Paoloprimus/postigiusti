@@ -18,7 +18,6 @@ export default function Navbar() {
       }
     );
 
-    // Controlla lo stato iniziale dell'utente
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
@@ -40,18 +39,18 @@ export default function Navbar() {
     <nav className="bg-blue-600 text-white py-4">
       <div className="container mx-auto px-4 flex justify-between items-center">
 
-        <Link href="/" legacyBehavior>
-          <a className="text-xl font-bold">AlloggiPrecari</a>
+        <Link href="/">
+          <span className="text-xl font-bold cursor-pointer">AlloggiPrecari</span>
         </Link>
 
         <div className="flex items-center space-x-4">
           {user ? (
             <>
-              <Link href="/dashboard" legacyBehavior>
-                <a className="hover:underline">Dashboard</a>
+              <Link href="/dashboard">
+                <span className="hover:underline cursor-pointer">Dashboard</span>
               </Link>
-              <Link href="/generate-invite" legacyBehavior>
-                <a className="hover:underline">Invita</a>
+              <Link href="/generate-invite">
+                <span className="hover:underline cursor-pointer">Invita</span>
               </Link>
               <button 
                 onClick={handleSignOut}
@@ -61,10 +60,10 @@ export default function Navbar() {
               </button>
             </>
           ) : (
-            <Link href="/login" legacyBehavior>
-              <a className="bg-white text-blue-600 px-3 py-1 rounded hover:bg-gray-100">
+            <Link href="/login">
+              <span className="bg-white text-blue-600 px-3 py-1 rounded hover:bg-gray-100 cursor-pointer">
                 Accedi
-              </a>
+              </span>
             </Link>
           )}
         </div>
