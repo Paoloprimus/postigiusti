@@ -14,22 +14,41 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
+      // ✅ Controllo se l'email è autorizzata nella tabella "invites"
+      const { data: invite, error: inviteError } = await supabase
+        .from('invites')
+        .select('email')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (inviteError) {
+        setError('Errore nella verifica dell’invito.');
+        setLoading(false);
+        return;
+      }
+
+      if (!invite) {
+        setError('Questa email non è autorizzata. Richiedi un invito.');
+        setLoading(false);
+        return;
+      }
+
+      // ✅ Login vero e proprio
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      
+
       if (error) {
         setError(error.message);
       } else {
-        // Reindirizza alla dashboard dopo il login
         router.push('/dashboard');
       }
     } catch (error) {
       console.error('Errore durante il login:', error);
-      setError('Si è verificato un errore durante il login');
+      setError('Errore inaspettato durante l’accesso.');
     } finally {
       setLoading(false);
     }
@@ -38,13 +57,13 @@ export default function Login() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Accedi</h1>
-      
+
       {error && (
         <div className="bg-red-100 p-4 rounded mb-6">
           <p className="text-red-700">{error}</p>
         </div>
       )}
-      
+
       <form onSubmit={handleLogin} className="max-w-md">
         <div className="mb-4">
           <label htmlFor="email" className="block mb-2">Email:</label>
@@ -57,7 +76,7 @@ export default function Login() {
             className="w-full px-3 py-2 border rounded"
           />
         </div>
-        
+
         <div className="mb-4">
           <label htmlFor="password" className="block mb-2">Password:</label>
           <input
@@ -69,7 +88,7 @@ export default function Login() {
             className="w-full px-3 py-2 border rounded"
           />
         </div>
-        
+
         <button
           type="submit"
           disabled={loading}
@@ -78,7 +97,7 @@ export default function Login() {
           {loading ? 'Accesso in corso...' : 'Accedi'}
         </button>
       </form>
-      
+
       <div className="mt-6">
         <p>
           Non hai un account?{' '}

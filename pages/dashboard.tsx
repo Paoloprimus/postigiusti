@@ -1,118 +1,162 @@
-import { useState, useEffect } from 'react';
+// pages/index.tsx
+import { useEffect, useState } from 'react';
+import Layout from '../components/Layout';
+import ListingCard from '../components/ListingCard';
+import SearchFilters from '../components/SearchFilters';
 import { supabase } from '../lib/supabase';
-import { getUserInvites } from '../lib/inviteUtils';
+import { Listing, Review, Filters } from '../lib/types'; // ✅ aggiunto Filters
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import AdminLink from '../components/AdminLink';
 
-export default function Dashboard() {
-  const [invites, setInvites] = useState([]);
+export default function Home() {
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [reviews, setReviews] = useState<{[key: string]: Review[]}>({});
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
-  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Carica i dati all'avvio
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        router.push('/login');
-        return;
-      }
-      
-      setUser(session.user);
-      loadInvites();
+      setIsLoggedIn(!!session);
     };
     
-    checkAuth();
+    checkSession();
+    fetchListings();
   }, []);
 
-  // Carica gli inviti generati dall'utente
-  const loadInvites = async () => {
+  const fetchListings = async (filters: Filters = {}) => {
     setLoading(true);
     
-    const { invites, success } = await getUserInvites();
+    let query = supabase
+      .from('listings')
+      .select('*')
+      .order('created_at', { ascending: false });
     
-    if (success && invites) {
-      setInvites(invites);
+    // Applica i filtri
+    if (filters.location) {
+      query = query.ilike('location', `%${filters.location}%`);
+    }
+    
+    if (filters.school) {
+      query = query.ilike('school', `%${filters.school}%`);
+    }
+    
+    if (filters.maxPrice) {
+      query = query.lte('price', filters.maxPrice);
+    }
+    
+    if (filters.minBeds) {
+      query = query.gte('beds', filters.minBeds);
+    }
+    
+    const { data, error } = await query;
+    
+    if (data && !error) {
+      setListings(data);
+      
+      // Fetch reviews for all listings
+      if (data.length > 0) {
+        const listingIds = data.map(listing => listing.id);
+        const { data: reviewsData } = await supabase
+          .from('reviews')
+          .select('*')
+          .in('listing_id', listingIds)
+          .order('created_at', { ascending: true });
+          
+        if (reviewsData) {
+          // Group reviews by listing_id
+          const reviewsByListing = reviewsData.reduce((acc, review) => {
+            if (!acc[review.listing_id]) {
+              acc[review.listing_id] = [];
+            }
+            acc[review.listing_id].push(review);
+            return acc;
+          }, {} as { [key: string]: Review[] });
+          
+          setReviews(reviewsByListing);
+        }
+      }
     }
     
     setLoading(false);
   };
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+  const handleFilter = (filters: Filters) => {
+    fetchListings(filters);
+  };
 
-      {user && (
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Il tuo profilo</h2>
-          <p>Email: {user.email}</p>
+  return (
+    <Layout title="AlloggiPrecari - Home">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">Alloggi per Precari della Scuola</h1>
+        <p className="text-gray-600">
+          Piattaforma dedicata allo scambio di informazioni su alloggi per docenti e personale ATA precario.
+        </p>
+      </div>
+      
+      {!isLoggedIn && (
+        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6">
+          <h2 className="text-lg font-semibold text-blue-800 mb-2">
+            Benvenuto su AlloggiPrecari
+          </h2>
+          <p className="mb-3">
+            Questa piattaforma è riservata ai precari della scuola. 
+            Per accedere hai bisogno di un invito da un membro esistente.
+          </p>
+          <div>
+            <Link 
+              href="/login" 
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 inline-block mr-2"
+            >
+              Accedi
+            </Link>
+            <Link 
+              href="/signup" 
+              className="bg-white border border-blue-600 text-blue-600 px-4 py-2 rounded hover:bg-blue-50 inline-block"
+            >
+              Registrati con invito
+            </Link>
+          </div>
         </div>
       )}
       
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">I tuoi inviti</h2>
-          <Link href="/generate-invite">
-            <a className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-              Genera nuovo invito
-            </a>
-          </Link>
+      <SearchFilters onFilter={handleFilter} />
+      
+      {loading ? (
+        <div className="text-center py-10">
+          <p>Caricamento annunci in corso...</p>
         </div>
-        
-        {loading ? (
-          <p>Caricamento in corso...</p>
-        ) : invites.length === 0 ? (
-          <p>Non hai ancora generato inviti.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border">
-              <thead>
-                <tr>
-                  <th className="py-2 px-4 border-b">Data</th>
-                  <th className="py-2 px-4 border-b">Email</th>
-                  <th className="py-2 px-4 border-b">Stato</th>
-                  <th className="py-2 px-4 border-b">Link</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invites.map((invite) => (
-                  <tr key={invite.id}>
-                    <td className="py-2 px-4 border-b">
-                      {new Date(invite.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="py-2 px-4 border-b">
-                      {invite.email || 'Nessuna email specificata'}
-                    </td>
-                    <td className="py-2 px-4 border-b">
-                      {invite.used ? (
-                        <span className="text-green-500">Utilizzato</span>
-                      ) : (
-                        <span className="text-blue-500">Disponibile</span>
-                      )}
-                    </td>
-                    <td className="py-2 px-4 border-b">
-                      {!invite.used && (
-                        <button
-                          onClick={() => {
-                            const inviteUrl = `${window.location.origin}/signup?token=${invite.token}`;
-                            navigator.clipboard.writeText(inviteUrl);
-                            alert('Link copiato negli appunti!');
-                          }}
-                          className="text-blue-500 hover:underline"
-                        >
-                          Copia link
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
+      ) : listings.length === 0 ? (
+        <div className="text-center py-10 bg-gray-50 rounded-lg">
+          <p className="text-lg text-gray-600">Nessun annuncio trovato</p>
+          {isLoggedIn && (
+            <p className="mt-2">
+              <Link 
+                href="/dashboard" 
+                className="text-blue-600 hover:underline"
+              >
+                Pubblica il primo annuncio
+              </Link>
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {listings.map(listing => (
+            <ListingCard 
+              key={listing.id} 
+              listing={listing} 
+              initialReviews={reviews[listing.id] || []}
+            />
+          ))}
+        </div>
+      )}
+    </Layout>
   );
 }
+
+{isLoggedIn && (
+  <div className="mt-8 text-sm text-right">
+    <AdminLink />
+  </div>
+)}
