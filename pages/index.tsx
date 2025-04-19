@@ -6,6 +6,7 @@ import SearchFilters from '../components/SearchFilters';
 import { supabase } from '../lib/supabase';
 import { Listing, Review, Filters } from '../lib/types'; // ✅ aggiunto Filters
 import Link from 'next/link';
+import AdminLink from '../components/AdminLink';
 
 export default function Home() {
   const [listings, setListings] = useState<Listing[]>([]);
@@ -153,3 +154,9 @@ export default function Home() {
     </Layout>
   );
 }
+
+{isLoggedIn && (
+  <div className="mt-8 text-sm text-right">
+    <AdminLink />
+  </div>
+)}
