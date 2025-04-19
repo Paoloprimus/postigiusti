@@ -1,4 +1,3 @@
-// components/Navbar.tsx
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -40,13 +39,20 @@ export default function Navbar() {
   return (
     <nav className="bg-blue-600 text-white py-4">
       <div className="container mx-auto px-4 flex justify-between items-center">
-        <Link href="/" className="text-xl font-bold">AlloggiPrecari</Link>
-        
+
+        <Link href="/" legacyBehavior>
+          <a className="text-xl font-bold">AlloggiPrecari</a>
+        </Link>
+
         <div className="flex items-center space-x-4">
           {user ? (
             <>
-              <Link href="/dashboard" className="hover:underline">Dashboard</Link>
-              <Link href="/generate-invite" className="hover:underline">Invita</Link>
+              <Link href="/dashboard" legacyBehavior>
+                <a className="hover:underline">Dashboard</a>
+              </Link>
+              <Link href="/generate-invite" legacyBehavior>
+                <a className="hover:underline">Invita</a>
+              </Link>
               <button 
                 onClick={handleSignOut}
                 className="bg-white text-blue-600 px-3 py-1 rounded hover:bg-gray-100"
@@ -55,11 +61,10 @@ export default function Navbar() {
               </button>
             </>
           ) : (
-            <Link 
-              href="/login" 
-              className="bg-white text-blue-600 px-3 py-1 rounded hover:bg-gray-100"
-            >
-              Accedi
+            <Link href="/login" legacyBehavior>
+              <a className="bg-white text-blue-600 px-3 py-1 rounded hover:bg-gray-100">
+                Accedi
+              </a>
             </Link>
           )}
         </div>
