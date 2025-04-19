@@ -27,3 +27,10 @@ export interface Listing {
     used: boolean;
     used_by?: string;
   }
+
+  export type Filters = {
+    location?: string;
+    school?: string;
+    maxPrice?: number;
+    minBeds?: number;
+  }

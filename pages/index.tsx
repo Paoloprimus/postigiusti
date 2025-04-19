@@ -4,7 +4,7 @@ import Layout from '../components/Layout';
 import ListingCard from '../components/ListingCard';
 import SearchFilters from '../components/SearchFilters';
 import { supabase } from '../lib/supabase';
-import { Listing, Review } from '../lib/types';
+import { Listing, Review, Filters } from '../lib/types'; // ✅ aggiunto Filters
 import Link from 'next/link';
 
 export default function Home() {
@@ -23,7 +23,7 @@ export default function Home() {
     fetchListings();
   }, []);
 
-  const fetchListings = async (filters = {}) => {
+  const fetchListings = async (filters: Filters = {}) => {
     setLoading(true);
     
     let query = supabase
@@ -70,7 +70,7 @@ export default function Home() {
             }
             acc[review.listing_id].push(review);
             return acc;
-          }, {});
+          }, {} as { [key: string]: Review[] });
           
           setReviews(reviewsByListing);
         }
@@ -80,7 +80,7 @@ export default function Home() {
     setLoading(false);
   };
 
-  const handleFilter = (filters) => {
+  const handleFilter = (filters: Filters) => {
     fetchListings(filters);
   };
 
