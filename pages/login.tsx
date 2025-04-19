@@ -41,7 +41,15 @@ export default function Login() {
         password,
       });
 
+      console.log('DATA:', data);
+      console.log('ERROR:', error);
+      console.error('Errore da Supabase:', error);
+      console.log('Dati restituiti:', data);
+      console.log('Risposta Supabase:', { data, error });
+
+
       if (error) {
+        console.error('Errore login:', error.message); // <== aggiunto
         setError(error.message);
       } else {
         router.push('/dashboard');
@@ -101,8 +109,8 @@ export default function Login() {
       <div className="mt-6">
         <p>
           Non hai un account?{' '}
-          <Link href="/signup">
-            <a className="text-blue-500 hover:underline">Registrati</a>
+          <Link href="/signup" className="text-blue-500 hover:underline">
+          Registrati
           </Link>
         </p>
       </div>
