@@ -1,3 +1,4 @@
+/*
 // middleware.ts
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
@@ -43,3 +44,4 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: ['/dashboard', '/generate-invite', '/login', '/signup'],
 };
+*/
