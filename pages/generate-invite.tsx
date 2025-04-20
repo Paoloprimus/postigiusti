@@ -2,13 +2,12 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
-import { InviteRow as Invite } from '../lib/types';
-// import { Invite } from '../lib/types';
+import { InviteRow } from '../lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function GenerateInvite() {
   const [email, setEmail]       = useState('');
-  const [invites, setInvites]   = useState<Invite[]>([]);
+  const [invites, setInvites] = useState<InviteRow[]>([]);
   const [loading, setLoading]   = useState(true);
   const [generating, setGen]    = useState(false);
   const [error, setError]       = useState('');
