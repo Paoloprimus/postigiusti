@@ -4,7 +4,6 @@ import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
 import { InviteRow } from '../lib/types';  // usa InviteRow e non Invite
 import { v4 as uuidv4 } from 'uuid';
-
 export default function GenerateInvite() {
   const [email, setEmail] = useState('');
   const [invites, setInvites] = useState<InviteRow[]>([]);
@@ -13,7 +12,6 @@ export default function GenerateInvite() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [copySuccess, setCopySuccess] = useState('');
-
   useEffect(() => {
     fetchInvites();
   }, []);
@@ -32,7 +30,6 @@ export default function GenerateInvite() {
     }
     setLoading(false);
   };
-
   const generateInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setGenerating(true);
