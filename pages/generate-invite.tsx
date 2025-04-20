@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
 import { InviteRow } from '../lib/types';  // usa InviteRow e non Invite
 import { v4 as uuidv4 } from 'uuid';
+
 export default function GenerateInvite() {
   const [email, setEmail] = useState('');
   const [invites, setInvites] = useState<InviteRow[]>([]);
@@ -12,6 +13,7 @@ export default function GenerateInvite() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [copySuccess, setCopySuccess] = useState('');
+
   useEffect(() => {
     fetchInvites();
   }, []);
@@ -20,16 +22,20 @@ export default function GenerateInvite() {
     setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
+    
     const { data, error } = await supabase
       .from('invites')
       .select('*')
       .eq('invited_by', session.user.id)
       .order('created_at', { ascending: false });
+    
     if (data && !error) {
+      // Cast esplicito a InviteRow[]
       setInvites(data as InviteRow[]);
     }
     setLoading(false);
   };
+
   const generateInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setGenerating(true);
@@ -45,17 +51,34 @@ export default function GenerateInvite() {
     }
 
     const token = uuidv4();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      setError('Sessione non valida');
+      setGenerating(false);
+      return;
+    }
+    
     const { data, error } = await supabase
       .from('invites')
-      .insert({ email, token })
+      .insert({ 
+        email, 
+        token, 
+        invited_by: session.user.id,
+        approved: false,
+        used: false
+      })
       .select()
       .single();
+    
     if (data && !error) {
+      // Cast esplicito a InviteRow
       setInvites([data as InviteRow, ...invites]);
       setSuccess('Invito generato con successo!');
       setEmail('');
     } else {
       setError('Errore durante la generazione dell\'invito');
+      console.error('Error inserting invite:', error);
     }
 
     setGenerating(false);
@@ -155,5 +178,3 @@ export default function GenerateInvite() {
     </Layout>
   );
 }
-// questo
-// è un test
