@@ -6,21 +6,33 @@ import type { NextRequest } from 'next/server';
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
-  
+
   const { data: { session } } = await supabase.auth.getSession();
   const path = req.nextUrl.pathname;
 
-  // Pagine che richiedono autenticazione
   const authRequiredPages = ['/dashboard', '/generate-invite'];
-  // Pagine per utenti non autenticati
-  const authPages = ['/login', '/signup'];
+  const authPages = ['/login', '/signup', '/admin-login'];
 
-  // Redirect a login se non autenticato e prova ad accedere a pagine protette
+  // Se serve autenticazione e non c'è sessione → vai su login
   if (!session && authRequiredPages.includes(path)) {
     return NextResponse.redirect(new URL('/login', req.url));
   }
-  
-  // Redirect a dashboard se già autenticato e prova ad accedere a pagine di login
+
+  // Verifica se admin sta accedendo a pagina protetta
+  if (session && authRequiredPages.includes(path)) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single();
+
+    // Se non è admin → vai su login
+    if (!profile || profile.role !== 'admin') {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
+  }
+
+  // Se utente è autenticato e accede a login/signup → vai a dashboard
   if (session && authPages.includes(path)) {
     return NextResponse.redirect(new URL('/dashboard', req.url));
   }
@@ -29,5 +41,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard', '/generate-invite', '/login', '/signup'],
-};// Middleware per la gestione dell'autenticazione
+  matcher: ['/dashboard', '/generate-invite', '/login', '/signup', '/admin-login'],
+};
