@@ -18,7 +18,7 @@ export interface Listing {
     created_at: string;
   }
   
-export interface Invite {
+export interface InviteRow {
   id: string;
   token: string;
   email: string | null;
