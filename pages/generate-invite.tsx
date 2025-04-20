@@ -2,12 +2,24 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
-import { InviteRow } from '../lib/types';  // usa InviteRow e non Invite
 import { v4 as uuidv4 } from 'uuid';
+
+// Definiamo un'interfaccia locale invece di usare quella importata
+interface LocalInvite {
+  id: string;
+  token: string;
+  email: string | null;
+  invited_by: string;
+  approved_by: string | null;
+  used_by: string | null;
+  approved: boolean;
+  used: boolean;
+  created_at: string;
+}
 
 export default function GenerateInvite() {
   const [email, setEmail] = useState('');
-  const [invites, setInvites] = useState<InviteRow[]>([]);
+  const [invites, setInvites] = useState<LocalInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
@@ -21,18 +33,38 @@ export default function GenerateInvite() {
   const fetchInvites = async () => {
     setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    
-    const { data, error } = await supabase
-      .from('invites')
-      .select('*')
-      .eq('invited_by', session.user.id)
-      .order('created_at', { ascending: false });
-    
-    if (data && !error) {
-      // Cast esplicito a InviteRow[]
-      setInvites(data as InviteRow[]);
+    if (!session) {
+      setLoading(false);
+      return;
     }
+    
+    try {
+      const { data, error } = await supabase
+        .from('invites')
+        .select('*')
+        .eq('invited_by', session.user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      // Trasformiamo manualmente i dati ricevuti
+      const typedInvites: LocalInvite[] = (data || []).map(item => ({
+        id: item.id,
+        token: item.token,
+        email: item.email,
+        invited_by: item.invited_by,
+        approved_by: item.approved_by,
+        used_by: item.used_by,
+        approved: !!item.approved, // Force boolean
+        used: !!item.used, // Force boolean
+        created_at: item.created_at
+      }));
+      
+      setInvites(typedInvites);
+    } catch (err) {
+      console.error('Error fetching invites:', err);
+    }
+    
     setLoading(false);
   };
 
@@ -42,45 +74,62 @@ export default function GenerateInvite() {
     setError('');
     setSuccess('');
 
-    // Limite 3 inviti pendenti
-    const pendings = invites.filter(i => !i.approved && !i.used);
-    if (pendings.length >= 3) {
-      setError('Hai già 3 inviti in sospeso/non usati');
-      setGenerating(false);
-      return;
-    }
-
-    const token = uuidv4();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      setError('Sessione non valida');
-      setGenerating(false);
-      return;
-    }
-    
-    const { data, error } = await supabase
-      .from('invites')
-      .insert({ 
-        email, 
-        token, 
+    try {
+      // Verifica sessione
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Sessione non valida');
+      }
+      
+      // Verifica limite inviti pendenti
+      const pendingCount = invites.filter(i => !i.used && !i.approved).length;
+      if (pendingCount >= 3) {
+        setError('Hai già 3 inviti in sospeso/non usati');
+        setGenerating(false);
+        return;
+      }
+      
+      // Genera token e crea l'invito
+      const token = uuidv4();
+      const newInvite = {
+        token,
+        email: email || null,
         invited_by: session.user.id,
         approved: false,
         used: false
-      })
-      .select()
-      .single();
-    
-    if (data && !error) {
-      // Cast esplicito a InviteRow
-      setInvites([data as InviteRow, ...invites]);
-      setSuccess('Invito generato con successo!');
-      setEmail('');
-    } else {
-      setError('Errore durante la generazione dell\'invito');
-      console.error('Error inserting invite:', error);
+      };
+      
+      const { data, error } = await supabase
+        .from('invites')
+        .insert(newInvite)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      if (data) {
+        // Costruisci manualmente il nuovo oggetto
+        const typedNewInvite: LocalInvite = {
+          id: data.id,
+          token: data.token,
+          email: data.email,
+          invited_by: data.invited_by,
+          approved_by: data.approved_by || null,
+          used_by: data.used_by || null,
+          approved: !!data.approved,
+          used: !!data.used,
+          created_at: data.created_at
+        };
+        
+        setInvites([typedNewInvite, ...invites]);
+        setSuccess('Invito generato con successo!');
+        setEmail('');
+      }
+    } catch (err: any) {
+      console.error('Error generating invite:', err);
+      setError(err.message || 'Errore durante la generazione dell\'invito');
     }
-
+    
     setGenerating(false);
   };
 
