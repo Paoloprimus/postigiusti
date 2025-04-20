@@ -22,11 +22,9 @@ export interface InviteRow {
   id: string;
   token: string;
   email: string | null;
-
   invited_by: string;            // chi ha creato l'invito
   approved_by: string | null;    // admin che lo approva
   used_by: string | null;        // nuovo membro che lo usa
-
   approved: boolean;             // true quando l'admin approva
   used: boolean;                 // true dopo la registrazione
 
