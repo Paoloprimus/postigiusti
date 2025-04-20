@@ -3,24 +3,41 @@ import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import ListingCard from '../components/ListingCard';
 import SearchFilters from '../components/SearchFilters';
-// ✅ sostituito supabase con useSession
 import { useSession } from '@supabase/auth-helpers-react';
 import { Listing, Review, Filters } from '../lib/types';
 import Link from 'next/link';
 import AdminLink from '../components/AdminLink';
-import { supabase } from '../lib/supabase'; // 👈 rimesso qui per query
+import { supabase } from '../lib/supabase';
 
 export default function Home() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [reviews, setReviews] = useState<{ [key: string]: Review[] }>({});
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null); // null: in attesa
 
   const session = useSession();
   const isLoggedIn = !!session;
 
   useEffect(() => {
-    fetchListings();
-  }, []);
+    if (session) {
+      checkAdmin();
+      fetchListings();
+    }
+  }, [session]);
+
+  const checkAdmin = async () => {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session?.user.id)
+      .single();
+
+    if (error || !profile || profile.role !== 'admin') {
+      setIsAdmin(false);
+    } else {
+      setIsAdmin(true);
+    }
+  };
 
   const fetchListings = async (filters: Filters = {}) => {
     setLoading(true);
@@ -80,6 +97,40 @@ export default function Home() {
     fetchListings(filters);
   };
 
+  if (!isLoggedIn) {
+    return (
+      <Layout title="Accesso richiesto">
+        <div className="p-6 text-center">
+          <h1 className="text-xl font-semibold mb-2">Devi effettuare il login</h1>
+          <Link href="/login" className="text-blue-600 underline">
+            Torna alla pagina di accesso
+          </Link>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isAdmin === false) {
+    return (
+      <Layout title="Accesso negato">
+        <div className="p-6 text-center text-red-600">
+          <h1 className="text-xl font-semibold mb-2">Accesso riservato agli amministratori</h1>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isAdmin === null) {
+    return (
+      <Layout title="Caricamento...">
+        <div className="p-6 text-center">
+          <p>Verifica dei permessi in corso...</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  // ✅ Accesso valido
   return (
     <Layout title="AlloggiPrecari - Home">
       <div className="mb-6">
@@ -88,32 +139,6 @@ export default function Home() {
           Piattaforma dedicata allo scambio di informazioni su alloggi per docenti e personale ATA precario.
         </p>
       </div>
-
-      {!isLoggedIn && (
-        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6">
-          <h2 className="text-lg font-semibold text-blue-800 mb-2">
-            Benvenuto su AlloggiPrecari
-          </h2>
-          <p className="mb-3">
-            Questa piattaforma è riservata ai precari della scuola.
-            Per accedere hai bisogno di un invito da un membro esistente.
-          </p>
-          <div>
-            <Link
-              href="/login"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 inline-block mr-2"
-            >
-              Accedi
-            </Link>
-            <Link
-              href="/signup"
-              className="bg-white border border-blue-600 text-blue-600 px-4 py-2 rounded hover:bg-blue-50 inline-block"
-            >
-              Registrati con invito
-            </Link>
-          </div>
-        </div>
-      )}
 
       <SearchFilters onFilter={handleFilter} />
 
@@ -124,16 +149,6 @@ export default function Home() {
       ) : listings.length === 0 ? (
         <div className="text-center py-10 bg-gray-50 rounded-lg">
           <p className="text-lg text-gray-600">Nessun annuncio trovato</p>
-          {isLoggedIn && (
-            <p className="mt-2">
-              <Link
-                href="/dashboard"
-                className="text-blue-600 hover:underline"
-              >
-                Pubblica il primo annuncio
-              </Link>
-            </p>
-          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -147,11 +162,9 @@ export default function Home() {
         </div>
       )}
 
-      {isLoggedIn && (
-        <div className="mt-8 text-sm text-right">
-          <AdminLink />
-        </div>
-      )}
+      <div className="mt-8 text-sm text-right">
+        <AdminLink />
+      </div>
     </Layout>
   );
 }
