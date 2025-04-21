@@ -3,221 +3,176 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { supabase } from '../lib/supabase';
-import Layout from '../components/Layout';
+import { supabase } from '../../lib/supabase';
+import Layout from '../../components/Layout';
 
-// Tipi per i dati
+// Tipi per i dati degli utenti e inviti
 interface Profile {
   id: string;
   email: string;
   nickname: string;
-  invited_by?: string;
+  invited_by: string | null;
 }
 
 interface Invite {
   id: string;
   token: string;
   invited_by: string;
-  used_by?: string;
+  used_by: string | null;
   created_at: string;
 }
 
 export default function AdminDashboard() {
-  const [role, setRole] = useState<string | null>(null);
-  const [members, setMembers] = useState<Profile[]>([]);
-  const [pendingMembers, setPendingMembers] = useState<Profile[]>([]);
-  const [invites, setInvites] = useState<Invite[]>([]);
   const router = useRouter();
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [pendingProfiles, setPendingProfiles] = useState<Profile[]>([]);
+  const [invites, setInvites] = useState<Invite[]>([]);
 
+  // Controllo autenticazione e ruolo admin
   useEffect(() => {
-    async function checkAndLoad() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/login');
+    (async () => {
+      const user = supabase.auth.user();
+      if (!user) {
+        router.push('/admin-login');
         return;
       }
-
+      // Verifica ruolo admin nel profilo
       const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
+        .from<Profile>('profiles')
+        .select('nickname')
+        .eq('id', user.id)
+        .eq('role', 'admin')
         .single();
-
-      if (profile?.role !== 'admin') {
-        router.push('/');
+      if (!profile) {
+        router.push('/admin-login');
         return;
       }
+      loadData();
+    })();
+  }, []);
 
-      setRole('admin');
-      await fetchData(session.user.id);
-    }
-    checkAndLoad();
-  }, [router]);
-
-  async function fetchData(adminId: string) {
-    const { data: profiles } = await supabase
+  // Carica dati
+  async function loadData() {
+    // Tutti i membri
+    const { data: allProfiles } = await supabase
       .from<Profile>('profiles')
       .select('id, email, nickname, invited_by');
-    setMembers(profiles || []);
+    setProfiles(allProfiles || []);
 
-    // TODO: Filtra pendingMembers basandoti su flag/stato
-    setPendingMembers([]);
+    // Profili pending
+    const { data: pendings } = await supabase
+      .from<Profile>('profiles')
+      .select('id, email, nickname, invited_by')
+      .eq('status', 'pending');
+    setPendingProfiles(pendings || []);
 
-    const { data: inv } = await supabase
+    // Inviti generati dall'admin
+    const { data: adminInvites } = await supabase
       .from<Invite>('invites')
-      .select('*')
-      .eq('invited_by', adminId);
-    setInvites(inv || []);
-  }
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
-  };
-
-  const handleBan = (memberId: string) => {
-    if (!confirm('Vuoi veramente bannare questo utente?')) return;
-    alert('Funzione ban da implementare.');
-  };
-
-  const handleMessage = (memberId: string) => {
-    alert(`Funzione messaggio a utente ${memberId} da implementare.`);
-  };
-
-  if (role !== 'admin') {
-    return (
-      <Layout title="Verifica in corso...">
-        <p>Caricamento...</p>
-      </Layout>
-    );
+      .select('id, token, invited_by, used_by, created_at')
+      .eq('invited_by', supabase.auth.user()?.id);
+    setInvites(adminInvites || []);
   }
 
   return (
-    <Layout title="Admin Dashboard">
-      <div className="flex space-x-4 mb-6">
-        <Link href="/dashboard">
-          <a className="px-4 py-2 bg-blue-600 text-white rounded">Bacheca</a>
-        </Link>
-        <Link href="/generate-invite">
-          <a className="px-4 py-2 bg-green-600 text-white rounded">Inviare Inviti</a>
-        </Link>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 bg-gray-600 text-white rounded"
-        >
-          Logout
-        </button>
-      </div>
+    <Layout>
+      <div className="p-6 space-y-6">
+        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
 
-      <div className="grid grid-cols-3 gap-6">
+        {/* Bottoni rapido accesso */}
+        <div className="flex space-x-4">
+          <Link href="/dashboard">
+            <a className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Bacheca</a>
+          </Link>
+          <Link href="/admin/inviti">
+            <a className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Invia Inviti</a>
+          </Link>
+          <button
+            onClick={async () => { await supabase.auth.signOut(); router.push('/'); }}
+            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            Logout
+          </button>
+        </div>
+
         {/* Tabella Membri */}
-        <div>
-          <h2 className="text-xl font-bold mb-2">Membri</h2>
-          <table className="min-w-full bg-white border">
+        <section>
+          <h2 className="text-xl font-semibold mb-2">Membri</h2>
+          <table className="min-w-full table-auto border">
             <thead>
-              <tr>
-                <th className="px-4 py-2 border">Email</th>
-                <th className="px-4 py-2 border">Nickname</th>
-                <th className="px-4 py-2 border">Inviti</th>
-                <th className="px-4 py-2 border">Azioni</th>
+              <tr className="bg-gray-100">
+                <th className="px-4 py-2">Email</th>
+                <th className="px-4 py-2">Nickname</th>
+                <th className="px-4 py-2">Invitato da</th>
+                <th className="px-4 py-2">Azioni</th>
               </tr>
             </thead>
             <tbody>
-              {members.map((m) => (
-                <tr key={m.id}>
-                  <td className="px-4 py-2 border">{m.email}</td>
-                  <td className="px-4 py-2 border">{m.nickname}</td>
-                  <td className="px-4 py-2 border">-</td>
-                  <td className="px-4 py-2 border space-x-2">
-                    <button
-                      onClick={() => handleMessage(m.id)}
-                      className="text-blue-600 hover:underline"
-                    >
-                      Msg
-                    </button>
-                    <button
-                      onClick={() => handleBan(m.id)}
-                      className="text-red-600 hover:underline"
-                    >
-                      Ban
-                    </button>
+              {profiles.map((p) => (
+                <tr key={p.id} className="border-t">
+                  <td className="px-4 py-2">{p.email}</td>
+                  <td className="px-4 py-2">{p.nickname}</td>
+                  <td className="px-4 py-2">{p.invited_by}</td>
+                  <td className="px-4 py-2">
+                    <button className="text-blue-600 hover:underline mr-2">Messaggia</button>
+                    <button className="text-red-600 hover:underline">Banna</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </section>
 
         {/* Tabella Nuovi Membri */}
-        <div>
-          <h2 className="text-xl font-bold mb-2">Nuovi Membri</h2>
-          <table className="min-w-full bg-white border">
+        <section>
+          <h2 className="text-xl font-semibold mb-2">Nuovi Membri (Pending)</h2>
+          <table className="min-w-full table-auto border">
             <thead>
-              <tr>
-                <th className="px-4 py-2 border">Email</th>
-                <th className="px-4 py-2 border">Nickname</th>
-                <th className="px-4 py-2 border">Invitante</th>
-                <th className="px-4 py-2 border">Azioni</th>
+              <tr className="bg-gray-100">
+                <th className="px-4 py-2">Email</th>
+                <th className="px-4 py-2">Nickname</th>
+                <th className="px-4 py-2">Invitato da</th>
+                <th className="px-4 py-2">Azioni</th>
               </tr>
             </thead>
             <tbody>
-              {pendingMembers.length > 0 ? (
-                pendingMembers.map((m) => (
-                  <tr key={m.id}>
-                    <td className="px-4 py-2 border">{m.email}</td>
-                    <td className="px-4 py-2 border">{m.nickname}</td>
-                    <td className="px-4 py-2 border">{m.invited_by}</td>
-                    <td className="px-4 py-2 border">
-                      <button className="text-green-600 hover:underline">
-                        Approva
-                      </button>
-                      <button className="text-red-600 hover:underline ml-2">
-                        Rifiuta
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={4} className="px-4 py-2 text-center text-gray-500">
-                    Nessun nuovo membro da approvare
+              {pendingProfiles.map((p) => (
+                <tr key={p.id} className="border-t">
+                  <td className="px-4 py-2">{p.email}</td>
+                  <td className="px-4 py-2">{p.nickname}</td>
+                  <td className="px-4 py-2">{p.invited_by}</td>
+                  <td className="px-4 py-2">
+                    <button className="text-green-600 hover:underline mr-2">Approva</button>
+                    <button className="text-red-600 hover:underline">Rifiuta</button>
                   </td>
                 </tr>
-              )}
+              ))}
             </tbody>
           </table>
-        </div>
+        </section>
 
-        {/* Tabella Inviti */}
-        <div>
-          <h2 className="text-xl font-bold mb-2">Inviti dell'Admin</h2>
-          <table className="min-w-full bg-white border">
+        {/* Tabella Inviti Admin */}
+        <section>
+          <h2 className="text-xl font-semibold mb-2">I Tuoi Inviti</h2>
+          <table className="min-w-full table-auto border">
             <thead>
-              <tr>
-                <th className="px-4 py-2 border">Token</th>
-                <th className="px-4 py-2 border">Usato da</th>
-                <th className="px-4 py-2 border">Creato il</th>
+              <tr className="bg-gray-100">
+                <th className="px-4 py-2">Token</th>
+                <th className="px-4 py-2">Usato da</th>
+                <th className="px-4 py-2">Creato il</th>
               </tr>
             </thead>
             <tbody>
               {invites.map((inv) => (
-                <tr key={inv.id}>
-                  <td className="px-4 py-2 border font-mono text-sm">
-                    {inv.token}
-                  </td>
-                  <td className="px-4 py-2 border">
-                    {inv.used_by || '-'}
-                  </td>
-                  <td className="px-4 py-2 border">
-                    {new Date(inv.created_at).toLocaleString('it-IT')}
-                  </td>
+                <tr key={inv.id} className="border-t">
+                  <td className="px-4 py-2 font-mono break-all">{inv.token}</td>
+                  <td className="px-4 py-2">{inv.used_by || '-'}</td>
+                  <td className="px-4 py-2">{new Date(inv.created_at).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </section>
       </div>
     </Layout>
   );
