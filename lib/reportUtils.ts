@@ -27,15 +27,15 @@ export async function createReport(
   input: NewReport
 ): Promise<Report> {
   const { data, error } = await supabase
-    // nessun generico qui:
-    .from('reports')
-    // specifichiamo i due tipi su insert: InsertType, ReturnType
-    .insert<NewReport, Report>(input)
+    .from('reports')        // nessun generico
+    .insert(input)          // inserisce NewReport
     .select('*')
     .single();
 
-  if (error) {
-    throw error;
+  if (error || !data) {
+    throw error ?? new Error('Report creation failed');
   }
-  return data;
+
+  // Castiamo il risultato a Report
+  return data as Report;
 }
