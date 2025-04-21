@@ -42,7 +42,7 @@ export default function AdminLogin() {
     }
 
     // 3) **Qui** reindirizziamo alla pagina admin corretta
-    router.push('/admin/inviti');
+    router.push('/admin/dashboard');
   };
 
   return (
