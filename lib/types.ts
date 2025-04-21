@@ -37,3 +37,15 @@ export interface InviteRow {
     maxPrice?: number;
     minBeds?: number;
   }
+
+ export type Report = {
+  id: string;
+  reported_by: string;
+  reported_user: string;
+  item_type: 'post' | 'comment';
+  item_id: string;
+  content_excerpt: string;
+  status: 'open' | 'reviewed' | 'dismissed';
+  created_at: string;
+};
+
