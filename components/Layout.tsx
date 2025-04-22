@@ -8,12 +8,12 @@ interface LayoutProps {
   title?: string;
 }
 
-export default function Layout({ children, title = 'Alloggi Precari' }: LayoutProps) {
+export default function Layout({ children, title = 'Posti Giusti' }: LayoutProps) {
   return (
     <>
       <Head>
         <title>{title}</title>
-        <meta name="description" content="Piattaforma di scambio informazioni su alloggi per precari della scuola" />
+        <meta name="description" content="Piattaforma di scambio info su alloggi arredati per lavoratori precari" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
@@ -22,7 +22,7 @@ export default function Layout({ children, title = 'Alloggi Precari' }: LayoutPr
         {children}
       </main>
       <footer className="bg-gray-100 py-4 text-center text-sm text-gray-500">
-        © {new Date().getFullYear()} AlloggiPrecari - Tutti i diritti riservati
+        © {new Date().getFullYear()} Posti Giusti - Tutti i diritti riservati
       </footer>
     </>
   );
