@@ -40,18 +40,13 @@ export default function Navbar() {
     <nav className="bg-blue-600 text-white py-4">
       <div className="container mx-auto px-4 flex justify-between items-center">
 
-        <Link href="/">
-          <span className="text-xl font-bold cursor-pointer">Posti Giusti</span>
-        </Link>
+      <h1 className="text-xl font-bold">Posti Giusti</h1>
+
 
         {user && (
           <div className="flex items-center space-x-4">
-            <Link href="/dashboard">
-              <span className="hover:underline cursor-pointer">Annuncia</span>
-            </Link>
-
-            <Link href="/generate-invite">
-              <span className="hover:underline cursor-pointer">Invita</span>
+            <Link href="/notice">
+              <span className="hover:underline cursor-pointer">Notifiche</span>
             </Link>
 
             <button 
