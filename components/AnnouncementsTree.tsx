@@ -1,3 +1,4 @@
+
 // components/AnnouncementsTree.tsx
 import { useState } from 'react';
 import useSWR from 'swr';
@@ -118,7 +119,8 @@ function CommentList({
     postId ? `/api/posts/${postId}/comments?limit=5` : null,
     fetcher
   );
-  const userId = useSWR('/api/auth/session', fetcher).data?.user?.id;
+  const { data: session } = useSWR<{ user: { id: string } }>('/api/auth/session', fetcher);
+  const userId = session?.user?.id;
 
   return (
     <div role="group" className="pl-12 space-y-1">
