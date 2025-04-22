@@ -65,8 +65,7 @@ export default function Signup() {
       {/* Descrizione sotto la navbar */}
       <div className="bg-gray-100 text-center py-2">
         Posti Giusti è una piattaforma su invito per lavoratori precari
-        della scuola dedicata allo scambio di info circa alloggi arredati
-        in affitto in tutta Italia.
+        della scuola dedicata allo scambio di info su alloggi arredati in tutta Italia.
       </div>
       <div className="max-w-md mx-auto mt-6 p-6 border rounded shadow">
         <h1 className="text-2xl font-bold mb-4 text-center">Registrati</h1>
