@@ -1,6 +1,6 @@
 /* pages/announcements.tsx */
-import Layout from '@/components/Layout';
-import AnnouncementsTree from '@/components/AnnouncementsTree';
+import Layout from '../components/Layout';
+import AnnouncementsTree from '../components/AnnouncementsTree';
 
 export default function AnnouncementsPage() {
   return (
@@ -16,7 +16,7 @@ export default function AnnouncementsPage() {
 /* components/AnnouncementsTree.tsx */
 import { useState } from 'react';
 import useSWR from 'swr';
-import { fetcher } from '@/lib/fetcher'; // helper per fetch
+import { fetcher } from '../lib/fetcher'; // helper per fetch
 
 type Region = { id: number; name: string };
 type Province = { id: number; name: string };
