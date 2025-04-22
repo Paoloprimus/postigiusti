@@ -1,6 +1,7 @@
 // pages/api/regions/[regionId]/provinces.ts
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { supabase } from '../lib/supabase'  // verifica il path!
+// devi risalire quattro livelli: [regionId] → regions → api → pages → <root>
+import { supabase } from '../../../../lib/supabase'  // verifica il path!
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
