@@ -61,7 +61,7 @@ export default function Login() {
         <p className="mt-4 text-center text-sm">
           Non hai un account?{' '}
           <Link href="/signup">
-            <a className="text-blue-600 hover:underline">Registrati</a>
+            <a className="text-blue-600 hover:underline">Registrati (solo con token d'invito)</a>
           </Link>
         </p>
       </div>
