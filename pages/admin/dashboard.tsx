@@ -73,14 +73,6 @@ export default function AdminDashboard() {
   return (
     <Layout>
       <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
-
-      <button
-        onClick={handleLogout}
-        className="mb-6 px-3 py-1 bg-red-500 text-white rounded"
-      >
-        Logout
-      </button>
-
       <h2 className="text-xl font-semibold mt-6">Membri</h2>
       <table className="w-full text-left border">
         <thead>
