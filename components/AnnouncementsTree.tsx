@@ -21,87 +21,110 @@ type Comment = {
 
 export default function AnnouncementsTree() {
   const { data: regions, error: regionsError } = useSWR<Region[]>('/api/regions', fetcher);
-  const [expandedRegion, setExpandedRegion] = useState<number | null>(null);
-  const [expandedProvince, setExpandedProvince] = useState<number | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
+  const [selectedProvince, setSelectedProvince] = useState<number | null>(null);
 
   if (regionsError) return <div>Errore nel caricamento delle regioni.</div>;
   if (!regions) return <div>Caricamento delle regioni...</div>;
 
-  return (
-    <div role="tree" className="space-y-2">
-      {regions.map(region => (
-        <div key={region.id}>
-          <button
-            className="font-semibold"
-            onClick={() => setExpandedRegion(prev => (prev === region.id ? null : region.id))}
-          >
-            {region.name}
-          </button>
+  // Breadcrumb
+  const regionName = regions.find(r => r.id === selectedRegion)?.name;
 
-          {expandedRegion === region.id && (
-            <ProvinceList
-              regionId={region.id}
-              expandedProvince={expandedProvince}
-              setExpandedProvince={setExpandedProvince}
-            />
-          )}
-        </div>
-      ))}
+  return (
+    <div>
+      <nav className="text-sm mb-4">
+        <span className="font-semibold">Posti Giusti</span>
+        {regionName && <><span> &gt; </span><span className="font-semibold">{regionName}</span></>}
+        {selectedProvince && <ProvinceCrumb regionId={selectedRegion!} provinceId={selectedProvince} />}
+      </nav>
+
+      <div role="tree" className="space-y-2">
+        {regions
+          .filter(r => (selectedRegion ? r.id === selectedRegion : true))
+          .map(region => (
+            <div key={region.id}>
+              <button
+                className={`font-semibold ${selectedRegion === region.id ? 'text-blue-600' : ''}`}
+                onClick={() => {
+                  setSelectedRegion(region.id);
+                  setSelectedProvince(null);
+                }}
+              >
+                {region.name}
+              </button>
+
+              {/* Mostra province solo per la regione selezionata */}
+              {selectedRegion === region.id && (
+                <ProvinceList
+                  regionId={region.id}
+                  selectedProvince={selectedProvince}
+                  onSelectProvince={id => setSelectedProvince(id)}
+                />
+              )}
+            </div>
+          ))}
+      </div>
     </div>
   );
+}
+
+function ProvinceCrumb({ regionId, provinceId }: { regionId: number; provinceId: number }) {
+  const { data: provinces } = useSWR<Province[]>(`/api/regions/${regionId}/provinces`, fetcher);
+  const name = provinces?.find(p => p.id === provinceId)?.name;
+  return name ? <><span> &gt; </span><span className="font-semibold">{name}</span></> : null;
 }
 
 function ProvinceList({
   regionId,
-  expandedProvince,
-  setExpandedProvince,
+  selectedProvince,
+  onSelectProvince,
 }: {
   regionId: number;
-  expandedProvince: number | null;
-  setExpandedProvince: React.Dispatch<React.SetStateAction<number | null>>;
+  selectedProvince: number | null;
+  onSelectProvince: (id: number) => void;
 }) {
-  const { data: provinces, error: provincesError } = useSWR<Province[]>(
-    () => `/api/regions/${regionId}/provinces`,
+  const { data: provinces, error } = useSWR<Province[]>(
+    `/api/regions/${regionId}/provinces`,
     fetcher
   );
-
-  if (provincesError) return <div>Errore nel caricamento delle province.</div>;
+  if (error) return <div>Errore nel caricamento delle province.</div>;
   if (!provinces) return <div>Caricamento delle province...</div>;
 
   return (
-    <div role="group" className="pl-4 space-y-1">
-      {provinces.map(province => (
-        <div key={province.id}>
-          <button
-            className="italic"
-            onClick={() => setExpandedProvince(prev => (prev === province.id ? null : province.id))}
-          >
-            {province.name}
-          </button>
+    <ul role="group" className="pl-4 space-y-1">
+      {provinces
+        .filter(p => (selectedProvince ? p.id === selectedProvince : true))
+        .map(province => (
+          <li key={province.id}>
+            <button
+              className={`italic ${selectedProvince === province.id ? 'text-blue-600' : ''}`}
+              onClick={() => onSelectProvince(province.id)}
+            >
+              {province.name}
+            </button>
 
-          {expandedProvince === province.id && <PostList provinceId={province.id} />}
-        </div>
-      ))}
-    </div>
+            {selectedProvince === province.id && <PostList provinceId={province.id} />}
+          </li>
+        ))}
+    </ul>
   );
 }
 
 function PostList({ provinceId }: { provinceId: number }) {
-  const { data: posts, error: postsError } = useSWR<Post[]>(
-    () => `/api/provinces/${provinceId}/posts?limit=5`,
+  const { data: posts, error } = useSWR<Post[]>(
+    `/api/provinces/${provinceId}/posts?limit=5`,
     fetcher
   );
-
-  if (postsError) return <div>Errore nel caricamento dei post.</div>;
+  if (error) return <div>Errore nel caricamento dei post.</div>;
   if (!posts) return <div>Caricamento dei post...</div>;
 
   return (
-    <div role="group" className="pl-8 space-y-1">
+    <ul role="group" className="pl-8 space-y-1">
       {posts.map(post => (
-        <div key={post.id} className={`flex flex-col ${post.isDeleted ? 'opacity-50' : ''}`}> 
+        <li key={post.id} className={`${post.isDeleted ? 'opacity-50' : ''}`}> 
           <span
             className={`cursor-pointer ${post.isDeleted ? 'line-through pointer-events-none' : 'underline'}`}
-            onClick={() => !post.isDeleted && openPostThread(post.id)}
+            onClick={() => openPostThread(post.id)}
           >
             {post.title}{' '}
             <small>
@@ -109,42 +132,33 @@ function PostList({ provinceId }: { provinceId: number }) {
               [{new Date(post.created_at).toLocaleDateString()}]
             </small>
           </span>
-
           <span
-            className="cursor-pointer text-sm underline"
+            className="cursor-pointer text-sm underline ml-2"
             onClick={() => openUserMessage(post.author.id)}
           >
             {post.author.nickname}
           </span>
-
           <CommentList postId={post.id} postAuthorId={post.author.id} />
-        </div>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
 
-function CommentList({
-  postId,
-  postAuthorId,
-}: {
-  postId: number;
-  postAuthorId: string;
-}) {
-  const { data: comments, error: commentsError } = useSWR<Comment[]>(
-    () => `/api/posts/${postId}/comments?limit=5`,
+function CommentList({ postId, postAuthorId }: { postId: number; postAuthorId: string }) {
+  const { data: comments, error } = useSWR<Comment[]>(
+    `/api/posts/${postId}/comments?limit=5`,
     fetcher
   );
   const { data: session } = useSWR<{ user: { id: string } }>('/api/auth/session', fetcher);
   const userId = session?.user?.id;
-
-  if (commentsError) return <div>Errore nel caricamento dei commenti.</div>;
+  if (error) return <div>Errore nel caricamento dei commenti.</div>;
   if (!comments) return <div>Caricamento dei commenti...</div>;
 
   return (
-    <div role="group" className="pl-12 space-y-1">
+    <ul role="group" className="pl-12 space-y-1">
       {comments.map(comment => (
-        <div key={comment.id} className="flex items-center">
+        <li key={comment.id} className="flex items-center">
           <span className="text-sm">{comment.content}</span>
           <small className="ml-2">
             [{comment.author.nickname}]{' '}
@@ -158,24 +172,13 @@ function CommentList({
               Rispondi
             </button>
           )}
-        </div>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
 
 /* Helper functions */
-function openPostThread(postId: number) {
-  // Apri pannello laterale dei commenti
-  console.log('Open thread for post', postId);
-}
-
-function openUserMessage(userId: string) {
-  // Apri scheda per invio messaggio
-  console.log('Open message to user', userId);
-}
-
-function replyToComment(postId: number, commentId: number) {
-  // Logica per rispondere a commento
-  console.log('Reply to comment', commentId, 'on post', postId);
-}
+function openPostThread(postId: number) { console.log('Open thread for post', postId); }
+function openUserMessage(userId: string) { console.log('Open message to user', userId); }
+function replyToComment(postId: number, commentId: number) { console.log('Reply to comment', commentId, 'on post', postId); }
