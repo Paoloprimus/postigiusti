@@ -1,4 +1,3 @@
-
 // components/AnnouncementsTree.tsx
 import { useState } from 'react';
 import useSWR from 'swr';
@@ -21,13 +20,16 @@ type Comment = {
 };
 
 export default function AnnouncementsTree() {
-  const { data: regions } = useSWR<Region[]>('/api/regions', fetcher);
+  const { data: regions, error: regionsError } = useSWR<Region[]>('/api/regions', fetcher);
   const [expandedRegion, setExpandedRegion] = useState<number | null>(null);
   const [expandedProvince, setExpandedProvince] = useState<number | null>(null);
 
+  if (regionsError) return <div>Errore nel caricamento delle regioni.</div>;
+  if (!regions) return <div>Caricamento delle regioni...</div>;
+
   return (
     <div role="tree" className="space-y-2">
-      {regions?.map(region => (
+      {regions.map(region => (
         <div key={region.id}>
           <button
             className="font-semibold"
@@ -35,6 +37,7 @@ export default function AnnouncementsTree() {
           >
             {region.name}
           </button>
+
           {expandedRegion === region.id && (
             <ProvinceList
               regionId={region.id}
@@ -57,14 +60,17 @@ function ProvinceList({
   expandedProvince: number | null;
   setExpandedProvince: React.Dispatch<React.SetStateAction<number | null>>;
 }) {
-  const { data: provinces } = useSWR<Province[]>(
-    regionId ? `/api/regions/${regionId}/provinces` : null,
+  const { data: provinces, error: provincesError } = useSWR<Province[]>(
+    () => `/api/regions/${regionId}/provinces`,
     fetcher
   );
 
+  if (provincesError) return <div>Errore nel caricamento delle province.</div>;
+  if (!provinces) return <div>Caricamento delle province...</div>;
+
   return (
     <div role="group" className="pl-4 space-y-1">
-      {provinces?.map(province => (
+      {provinces.map(province => (
         <div key={province.id}>
           <button
             className="italic"
@@ -72,6 +78,7 @@ function ProvinceList({
           >
             {province.name}
           </button>
+
           {expandedProvince === province.id && <PostList provinceId={province.id} />}
         </div>
       ))}
@@ -80,27 +87,36 @@ function ProvinceList({
 }
 
 function PostList({ provinceId }: { provinceId: number }) {
-  const { data: posts } = useSWR<Post[]>(
-    provinceId ? `/api/provinces/${provinceId}/posts?limit=5` : null,
+  const { data: posts, error: postsError } = useSWR<Post[]>(
+    () => `/api/provinces/${provinceId}/posts?limit=5`,
     fetcher
   );
 
+  if (postsError) return <div>Errore nel caricamento dei post.</div>;
+  if (!posts) return <div>Caricamento dei post...</div>;
+
   return (
     <div role="group" className="pl-8 space-y-1">
-      {posts?.map(post => (
+      {posts.map(post => (
         <div key={post.id} className={`flex flex-col ${post.isDeleted ? 'opacity-50' : ''}`}> 
           <span
             className={`cursor-pointer ${post.isDeleted ? 'line-through pointer-events-none' : 'underline'}`}
             onClick={() => !post.isDeleted && openPostThread(post.id)}
           >
-            {post.title} <small>[{post.author.nickname}] [{new Date(post.created_at).toLocaleDateString()}]</small>
+            {post.title}{' '}
+            <small>
+              [{post.author.nickname}]{' '}
+              [{new Date(post.created_at).toLocaleDateString()}]
+            </small>
           </span>
+
           <span
             className="cursor-pointer text-sm underline"
             onClick={() => openUserMessage(post.author.id)}
           >
             {post.author.nickname}
           </span>
+
           <CommentList postId={post.id} postAuthorId={post.author.id} />
         </div>
       ))}
@@ -115,19 +131,25 @@ function CommentList({
   postId: number;
   postAuthorId: string;
 }) {
-  const { data: comments } = useSWR<Comment[]>(
-    postId ? `/api/posts/${postId}/comments?limit=5` : null,
+  const { data: comments, error: commentsError } = useSWR<Comment[]>(
+    () => `/api/posts/${postId}/comments?limit=5`,
     fetcher
   );
   const { data: session } = useSWR<{ user: { id: string } }>('/api/auth/session', fetcher);
   const userId = session?.user?.id;
 
+  if (commentsError) return <div>Errore nel caricamento dei commenti.</div>;
+  if (!comments) return <div>Caricamento dei commenti...</div>;
+
   return (
     <div role="group" className="pl-12 space-y-1">
-      {comments?.map(comment => (
+      {comments.map(comment => (
         <div key={comment.id} className="flex items-center">
           <span className="text-sm">{comment.content}</span>
-          <small className="ml-2">[{comment.author.nickname}] [{new Date(comment.created_at).toLocaleDateString()}]</small>
+          <small className="ml-2">
+            [{comment.author.nickname}]{' '}
+            [{new Date(comment.created_at).toLocaleDateString()}]
+          </small>
           {userId === postAuthorId && (
             <button
               className="ml-2 text-blue-500 text-xs"
@@ -144,13 +166,16 @@ function CommentList({
 
 /* Helper functions */
 function openPostThread(postId: number) {
+  // Apri pannello laterale dei commenti
   console.log('Open thread for post', postId);
 }
 
 function openUserMessage(userId: string) {
+  // Apri scheda per invio messaggio
   console.log('Open message to user', userId);
 }
 
 function replyToComment(postId: number, commentId: number) {
+  // Logica per rispondere a commento
   console.log('Reply to comment', commentId, 'on post', postId);
 }
