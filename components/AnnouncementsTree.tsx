@@ -27,15 +27,40 @@ export default function AnnouncementsTree() {
   if (regionsError) return <div>Errore nel caricamento delle regioni.</div>;
   if (!regions) return <div>Caricamento delle regioni...</div>;
 
-  // Breadcrumb
   const regionName = regions.find(r => r.id === selectedRegion)?.name;
 
   return (
     <div>
-      <nav className="text-sm mb-4">
-        <span className="font-semibold">Posti Giusti</span>
-        {regionName && <><span> &gt; </span><span className="font-semibold">{regionName}</span></>}
-        {selectedProvince && <ProvinceCrumb regionId={selectedRegion!} provinceId={selectedProvince} />}
+      <nav className="text-sm mb-4 flex items-center gap-1">
+        <button
+          className="font-semibold hover:underline"
+          onClick={() => {
+            setSelectedRegion(null);
+            setSelectedProvince(null);
+          }}
+        >
+          Posti Giusti
+        </button>
+        {regionName && (
+          <>
+            <span>&gt;</span>
+            <button
+              className="font-semibold hover:underline"
+              onClick={() => {
+                setSelectedProvince(null);
+              }}
+            >
+              {regionName}
+            </button>
+          </>
+        )}
+        {selectedProvince && (
+          <ProvinceCrumb
+            regionId={selectedRegion!}
+            provinceId={selectedProvince}
+            onClick={() => setSelectedProvince(null)}
+          />
+        )}
       </nav>
 
       <div role="tree" className="space-y-2">
@@ -53,7 +78,6 @@ export default function AnnouncementsTree() {
                 {region.name}
               </button>
 
-              {/* Mostra province solo per la regione selezionata */}
               {selectedRegion === region.id && (
                 <ProvinceList
                   regionId={region.id}
@@ -68,10 +92,30 @@ export default function AnnouncementsTree() {
   );
 }
 
-function ProvinceCrumb({ regionId, provinceId }: { regionId: number; provinceId: number }) {
-  const { data: provinces } = useSWR<Province[]>(`/api/regions/${regionId}/provinces`, fetcher);
+function ProvinceCrumb({
+  regionId,
+  provinceId,
+  onClick,
+}: {
+  regionId: number;
+  provinceId: number;
+  onClick: () => void;
+}) {
+  const { data: provinces } = useSWR<Province[]>(
+    `/api/regions/${regionId}/provinces`,
+    fetcher
+  );
   const name = provinces?.find(p => p.id === provinceId)?.name;
-  return name ? <><span> &gt; </span><span className="font-semibold">{name}</span></> : null;
+
+  if (!name) return null;
+  return (
+    <>
+      <span>&gt;</span>
+      <button className="font-semibold hover:underline" onClick={onClick}>
+        {name}
+      </button>
+    </>
+  );
 }
 
 function ProvinceList({
