@@ -2,26 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import Layout from '../../components/Layout';
 
 // Tipi per i dati degli utenti e inviti
-interface Profile {
+type Profile = {
   id: string;
   email: string;
   nickname: string;
   role: string;
   invited_by: string | null;
-}
+};
 
-interface Invite {
+type Invite = {
   id: string;
   token: string;
   invited_by: string;
   used_by: string | null;
   created_at: string;
-}
+};
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -32,7 +31,9 @@ export default function AdminDashboard() {
   useEffect(() => {
     (async () => {
       // Controlla sessione
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const user = session?.user;
       if (!user) {
         router.push('/admin-login');
@@ -41,7 +42,7 @@ export default function AdminDashboard() {
       // Verifica ruolo admin
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('role')
         .eq('id', user.id)
         .single();
       if (profileError || profile.role !== 'admin') {
@@ -56,11 +57,11 @@ export default function AdminDashboard() {
       setPendingProfiles(
         (allProfiles || []).filter((p) => p.role === 'pending')
       );
-      // Carica inviti admin
-      const { data: adminInvites } = await supabase
+      // Carica tutti gli inviti
+      const { data: allInvites } = await supabase
         .from('invites')
         .select('*');
-      setInvites(adminInvites || []);
+      setInvites(allInvites || []);
     })();
   }, [router]);
 
@@ -71,21 +72,14 @@ export default function AdminDashboard() {
 
   return (
     <Layout>
-      <h1 className="text-2xl font-bold mb-4">Bacheca Amministratore</h1>
-      // <div className="flex gap-2 mb-4">
-      //  <Link href="/dashboard">
-      //    <a className="px-3 py-1 bg-gray-200 rounded">Bacheca</a>
-      //  </Link>
-      //  <Link href="/generate-invite">
-      //    <a className="px-3 py-1 bg-gray-200 rounded">Invia Inviti</a>
-      //  </Link>
-      //  <button
-      //    onClick={handleLogout}
-      //    className="px-3 py-1 bg-gray-200 rounded"
-      //  >
-      //    Logout
-      //  </button>
-      // </div>
+      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
+
+      <button
+        onClick={handleLogout}
+        className="mb-6 px-3 py-1 bg-red-500 text-white rounded"
+      >
+        Logout
+      </button>
 
       <h2 className="text-xl font-semibold mt-6">Membri</h2>
       <table className="w-full text-left border">
@@ -102,7 +96,9 @@ export default function AdminDashboard() {
             <tr key={p.id} className="border-t">
               <td className="px-2 py-1">{p.email}</td>
               <td className="px-2 py-1">{p.nickname}</td>
-              <td className="px-2 py-1">{/* da implementare conteggio */}</td>
+              <td className="px-2 py-1">
+                {invites.filter((inv) => inv.invited_by === p.id).length}
+              </td>
               <td className="px-2 py-1 space-x-2">
                 <button className="text-sm text-red-600">Banna</button>
                 <button className="text-sm text-blue-600">Msg</button>
