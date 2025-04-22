@@ -31,7 +31,7 @@ export default function AnnouncementsTree() {
 
   return (
     <div>
-      <nav className="text-lg mb-4 flex items-center gap-2">
+      <nav className="text-lg text-blue-600 mb-4 flex items-center gap-2">
         <button
           className="font-semibold hover:underline"
           onClick={() => {
@@ -39,7 +39,7 @@ export default function AnnouncementsTree() {
             setSelectedProvince(null);
           }}
         >
-          Posti Giusti
+          Italia
         </button>
         {regionName && (
           <>
