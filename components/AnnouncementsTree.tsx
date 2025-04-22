@@ -31,7 +31,7 @@ export default function AnnouncementsTree() {
 
   return (
     <div>
-      <nav className="text-sm mb-4 flex items-center gap-1">
+      <nav className="text-lg mb-4 flex items-center gap-2">
         <button
           className="font-semibold hover:underline"
           onClick={() => {
