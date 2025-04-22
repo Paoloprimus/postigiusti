@@ -44,6 +44,12 @@ export default function Navbar() {
 
 
         {user && (
+
+              <div className="flex items-center space-x-4">
+            <Link href="/messages">
+              <span className="hover:underline cursor-pointer">Messaggi</span>
+            </Link>
+                  
           <div className="flex items-center space-x-4">
             <Link href="/notice">
               <span className="hover:underline cursor-pointer">Notifiche</span>
