@@ -18,7 +18,7 @@ export default function AnnouncementsPage() {
 
   return (
     <Layout>
-      <h1 className="text-2xl font-bold my-4">Annunci</h1>
+      <h1 className="text-2xl font-bold my-4">Bacheca</h1>
       <AnnouncementsTree />
     </Layout>
   );
