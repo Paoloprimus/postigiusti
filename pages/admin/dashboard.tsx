@@ -71,21 +71,21 @@ export default function AdminDashboard() {
 
   return (
     <Layout>
-      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
-      <div className="flex gap-2 mb-4">
-        <Link href="/dashboard">
-          <a className="px-3 py-1 bg-gray-200 rounded">Bacheca</a>
-        </Link>
-        <Link href="/generate-invite">
-          <a className="px-3 py-1 bg-gray-200 rounded">Invia Inviti</a>
-        </Link>
-        <button
-          onClick={handleLogout}
-          className="px-3 py-1 bg-gray-200 rounded"
-        >
-          Logout
-        </button>
-      </div>
+      <h1 className="text-2xl font-bold mb-4">Bacheca Amministratore</h1>
+      // <div className="flex gap-2 mb-4">
+      //  <Link href="/dashboard">
+      //    <a className="px-3 py-1 bg-gray-200 rounded">Bacheca</a>
+      //  </Link>
+      //  <Link href="/generate-invite">
+      //    <a className="px-3 py-1 bg-gray-200 rounded">Invia Inviti</a>
+      //  </Link>
+      //  <button
+      //    onClick={handleLogout}
+      //    className="px-3 py-1 bg-gray-200 rounded"
+      //  >
+      //    Logout
+      //  </button>
+      // </div>
 
       <h2 className="text-xl font-semibold mt-6">Membri</h2>
       <table className="w-full text-left border">
