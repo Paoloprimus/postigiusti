@@ -1,5 +1,4 @@
 /* pages/announcements.tsx */
-import React from 'react';
 import Layout from '@/components/Layout';
 import AnnouncementsTree from '@/components/AnnouncementsTree';
 
@@ -15,7 +14,7 @@ export default function AnnouncementsPage() {
 
 
 /* components/AnnouncementsTree.tsx */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/fetcher'; // helper per fetch
 
@@ -35,19 +34,36 @@ export default function AnnouncementsTree() {
         <div key={region.id}>
           <button
             className="font-semibold"
-            onClick={() => setExpandedRegion(prev => prev === region.id ? null : region.id)}
+            onClick={() => setExpandedRegion(prev => (prev === region.id ? null : region.id))}
           >
             {region.name}
           </button>
-          {expandedRegion === region.id && <ProvinceList regionId={region.id} expandedProvince={expandedProvince} setExpandedProvince={setExpandedProvince} />}
+          {expandedRegion === region.id && (
+            <ProvinceList
+              regionId={region.id}
+              expandedProvince={expandedProvince}
+              setExpandedProvince={setExpandedProvince}
+            />
+          )}
         </div>
       ))}
     </div>
   );
 }
 
-function ProvinceList({ regionId, expandedProvince, setExpandedProvince }: { regionId: number; expandedProvince: number | null; setExpandedProvince: React.Dispatch<React.SetStateAction<number | null>> }) {
-  const { data: provinces } = useSWR<Province[]>(regionId ? `/api/regions/${regionId}/provinces` : null, fetcher);
+function ProvinceList({
+  regionId,
+  expandedProvince,
+  setExpandedProvince,
+}: {
+  regionId: number;
+  expandedProvince: number | null;
+  setExpandedProvince: React.Dispatch<React.SetStateAction<number | null>>;
+}) {
+  const { data: provinces } = useSWR<Province[]>(
+    regionId ? `/api/regions/${regionId}/provinces` : null,
+    fetcher
+  );
 
   return (
     <div role="group" className="pl-4 space-y-1">
@@ -55,7 +71,7 @@ function ProvinceList({ regionId, expandedProvince, setExpandedProvince }: { reg
         <div key={province.id}>
           <button
             className="italic"
-            onClick={() => setExpandedProvince(prev => prev === province.id ? null : province.id)}
+            onClick={() => setExpandedProvince(prev => (prev === province.id ? null : province.id))}
           >
             {province.name}
           </button>
@@ -67,12 +83,15 @@ function ProvinceList({ regionId, expandedProvince, setExpandedProvince }: { reg
 }
 
 function PostList({ provinceId }: { provinceId: number }) {
-  const { data: posts } = useSWR<Post[]>(provinceId ? `/api/provinces/${provinceId}/posts?limit=5` : null, fetcher);
+  const { data: posts } = useSWR<Post[]>(
+    provinceId ? `/api/provinces/${provinceId}/posts?limit=5` : null,
+    fetcher
+  );
 
   return (
     <div role="group" className="pl-8 space-y-1">
       {posts?.map(post => (
-        <div key={post.id} className={`flex flex-col ${post.isDeleted ? 'opacity-50' : ''}`}>
+        <div key={post.id} className={`flex flex-col ${post.isDeleted ? 'opacity-50' : ''}`}> 
           <span
             className={`cursor-pointer ${post.isDeleted ? 'line-through pointer-events-none' : 'underline'}`}
             onClick={() => !post.isDeleted && openPostThread(post.id)}
@@ -80,21 +99,30 @@ function PostList({ provinceId }: { provinceId: number }) {
             {post.title} <small>[{post.author.nickname}] [{new Date(post.created_at).toLocaleDateString()}]</small>
           </span>
           <span
-            className="cursor-pointer text-sm"
+            className="cursor-pointer text-sm underline"
             onClick={() => openUserMessage(post.author.id)}
           >
             {post.author.nickname}
           </span>
-          <CommentList postId={post.id} />
+          <CommentList postId={post.id} postAuthorId={post.author.id} />
         </div>
       ))}
     </div>
   );
 }
 
-function CommentList({ postId }: { postId: number }) {
-  const { data: comments } = useSWR<Comment[]>(postId ? `/api/posts/${postId}/comments?limit=5` : null, fetcher);
-  const user = useSWR('/api/auth/session', fetcher).data?.user;
+function CommentList({
+  postId,
+  postAuthorId,
+}: {
+  postId: number;
+  postAuthorId: string;
+}) {
+  const { data: comments } = useSWR<Comment[]>(
+    postId ? `/api/posts/${postId}/comments?limit=5` : null,
+    fetcher
+  );
+  const userId = useSWR('/api/auth/session', fetcher).data?.user?.id;
 
   return (
     <div role="group" className="pl-12 space-y-1">
@@ -102,9 +130,13 @@ function CommentList({ postId }: { postId: number }) {
         <div key={comment.id} className="flex items-center">
           <span className="text-sm">{comment.content}</span>
           <small className="ml-2">[{comment.author.nickname}] [{new Date(comment.created_at).toLocaleDateString()}]</small>
-          {/* Solo l'autore del post può rispondere */}
-          {user?.id === comment.author.id && (
-            <button className="ml-2 text-blue-500 text-xs" onClick={() => replyToComment(postId, comment.id)}>Rispondi</button>
+          {userId === postAuthorId && (
+            <button
+              className="ml-2 text-blue-500 text-xs"
+              onClick={() => replyToComment(postId, comment.id)}
+            >
+              Rispondi
+            </button>
           )}
         </div>
       ))}
@@ -114,16 +146,13 @@ function CommentList({ postId }: { postId: number }) {
 
 /* Helper functions */
 function openPostThread(postId: number) {
-  // logica per aprire pannello laterale
   console.log('Open thread for post', postId);
 }
 
 function openUserMessage(userId: string) {
-  // logica per aprire scheda messaggio
   console.log('Open message to user', userId);
 }
 
 function replyToComment(postId: number, commentId: number) {
-  // logica per aprire form reply
   console.log('Reply to comment', commentId, 'on post', postId);
 }
