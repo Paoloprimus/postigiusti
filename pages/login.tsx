@@ -1,4 +1,5 @@
 // pages/login.tsx
+
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '../lib/supabase';
@@ -14,7 +15,7 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const { data, error: loginError } = 
+    const { data, error: loginError } =
       await supabase.auth.signInWithPassword({ email, password });
     if (loginError || !data.session) {
       setError('Email o password non validi.');
@@ -24,20 +25,24 @@ export default function Login() {
   };
 
   return (
-    <Layout title="PostiGiusti – Login">
-      <div className="max-w-md mx-auto mt-20 p-6 border rounded shadow">
+    <Layout title="Posti Giusti – Login">
+      {/* Descrizione sotto la navbar */}
+      <div className="bg-gray-100 text-center py-2">
+        Posti Giusti è una piattaforma su invito per lavoratori precari
+        della scuola dedicata allo scambio di info circa alloggi arredati
+        in affitto in tutta Italia.
+      </div>
+      <div className="max-w-md mx-auto mt-6 p-6 border rounded shadow">
         <h1 className="text-2xl font-bold mb-4 text-center">Accedi</h1>
         <form onSubmit={handleLogin} className="space-y-4">
-          {error && (
-            <p className="text-red-600 text-sm">{error}</p>
-          )}
+          {error && <p className="text-red-600 text-sm">{error}</p>}
           <div>
             <label className="block text-sm mb-1">Email</label>
             <input
               type="email"
               className="w-full border px-3 py-2 rounded"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
@@ -47,7 +52,7 @@ export default function Login() {
               type="password"
               className="w-full border px-3 py-2 rounded"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
@@ -61,7 +66,7 @@ export default function Login() {
         <p className="mt-4 text-center text-sm">
           Non hai un account?{' '}
           <Link href="/signup">
-            <a className="text-blue-600 hover:underline">Registrati (solo con token d'invito)</a>
+            <a className="text-blue-600 hover:underline">Registrati</a>
           </Link>
         </p>
       </div>
