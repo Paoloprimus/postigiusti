@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { User } from 'lucide-react';
 
 export default function Navbar() {
   const router = useRouter();
@@ -47,20 +48,23 @@ export default function Navbar() {
           {user ? (
             <>
               <Link href="/dashboard">
-                <span className="hover:underline cursor-pointer">Annunci</span>
+                <span className="hover:underline cursor-pointer">Annuncia</span>
               </Link>
               <Link href="/generate-invite">
-                <span className="hover:underline cursor-pointer">Inviti</span>
+                <span className="hover:underline cursor-pointer">Invita</span>
               </Link>
-              <Link href="/profilo">
-                <span className="hover:underline cursor-pointer">Profilo</span>
-              </Link>
+
               <button 
                 onClick={handleSignOut}
                 // className="bg-white text-blue-600 px-3 py-1 rounded hover:bg-gray-100"
               >
                 Esci
               </button>
+
+              <Link href="/profilo">
+                <User className="w-6 h-6 hover:text-gray-200 cursor-pointer" />
+              </Link>
+              
             </>
           ) : (
             <Link href="/login">
