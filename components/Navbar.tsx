@@ -40,21 +40,24 @@ export default function Navbar() {
       <div className="container mx-auto px-4 flex justify-between items-center">
 
         <Link href="/">
-          <span className="text-xl font-bold cursor-pointer">AlloggiPrecari</span>
+          <span className="text-xl font-bold cursor-pointer">Posti Giusti</span>
         </Link>
 
         <div className="flex items-center space-x-4">
           {user ? (
             <>
               <Link href="/dashboard">
-                <span className="hover:underline cursor-pointer">Dashboard</span>
+                <span className="hover:underline cursor-pointer">Annunci</span>
               </Link>
               <Link href="/generate-invite">
-                <span className="hover:underline cursor-pointer">Invita</span>
+                <span className="hover:underline cursor-pointer">Inviti</span>
+              </Link>
+              <Link href="/profilo">
+                <span className="hover:underline cursor-pointer">Profilo</span>
               </Link>
               <button 
                 onClick={handleSignOut}
-                className="bg-white text-blue-600 px-3 py-1 rounded hover:bg-gray-100"
+                // className="bg-white text-blue-600 px-3 py-1 rounded hover:bg-gray-100"
               >
                 Esci
               </button>
