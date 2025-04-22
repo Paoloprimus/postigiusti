@@ -1,4 +1,4 @@
-/* pages/announcements.tsx */
+// pages/announcements.tsx
 import Layout from '../components/Layout';
 import AnnouncementsTree from '../components/AnnouncementsTree';
 
@@ -13,15 +13,26 @@ export default function AnnouncementsPage() {
 }
 
 
-/* components/AnnouncementsTree.tsx */
+// components/AnnouncementsTree.tsx
 import { useState } from 'react';
 import useSWR from 'swr';
-import { fetcher } from '../lib/fetcher'; // helper per fetch
+import { fetcher } from '../lib/fetcher';
 
 type Region = { id: number; name: string };
 type Province = { id: number; name: string };
-type Post = { id: number; title: string; author: { id: string; nickname: string }; created_at: string; isDeleted: boolean };
-type Comment = { id: number; content: string; author: { id: string; nickname: string }; created_at: string };
+type Post = {
+  id: number;
+  title: string;
+  author: { id: string; nickname: string };
+  created_at: string;
+  isDeleted: boolean;
+};
+type Comment = {
+  id: number;
+  content: string;
+  author: { id: string; nickname: string };
+  created_at: string;
+};
 
 export default function AnnouncementsTree() {
   const { data: regions } = useSWR<Region[]>('/api/regions', fetcher);
@@ -122,7 +133,8 @@ function CommentList({
     postId ? `/api/posts/${postId}/comments?limit=5` : null,
     fetcher
   );
-  const userId = useSWR('/api/auth/session', fetcher).data?.user?.id;
+  const { data: session } = useSWR<{ user: { id: string } }>('/api/auth/session', fetcher);
+  const userId = session?.user?.id;
 
   return (
     <div role="group" className="pl-12 space-y-1">
