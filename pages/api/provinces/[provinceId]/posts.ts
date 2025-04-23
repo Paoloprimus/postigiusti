@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'provinceId is not a number' });
   }
 
-  // 2) GET /api/provinces/:provinceId/posts?limit=5
+  // 2) Branch GET – nessuna chiamata a supabase.auth.getSession()
   if (req.method === 'GET') {
     try {
       const limit = typeof req.query.limit === 'string'
@@ -42,11 +42,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 
-  // 3) POST /api/provinces/:provinceId/posts
+  // 3) Branch POST – qui va il controllo della sessione
   if (req.method === 'POST') {
+    // Prima di tutto leggi la sessione
     const {
       data: { session }
     } = await supabase.auth.getSession();
+
     if (!session) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -60,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('posts')
       .insert({
         province_id: pid,
-        content: title,        // se usi content per testo
+        content: title,        // se usi content per il testo
         author: session.user.id,
       })
       .select('id,content,author,created_at,province_id');
@@ -72,7 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(201).json(data![0]);
   }
 
-  // 4) Method not allowed
+  // 4) Qualunque altro metodo => 405
   res.setHeader('Allow', ['GET', 'POST']);
   return res.status(405).end(`Method ${req.method} Not Allowed`);
 }
