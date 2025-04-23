@@ -1,6 +1,8 @@
+// components/AnnouncementsTree.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import useSWR, { mutate } from 'swr';
 import { fetcher } from '../lib/fetcher';
+import { supabase } from '../lib/supabase';
 
 // Tipi dati
 type Region = { id: number; name: string };
@@ -43,26 +45,23 @@ export default function AnnouncementsTree() {
       </nav>
 
       <div role="tree" className="space-y-2">
-        {regions
-          .filter(r => (selectedRegion ? r.id === selectedRegion : true))
-          .map(region => (
-            <div key={region.id}>
-              <button
-                className={`font-semibold ${selectedRegion === region.id ? 'text-blue-600' : ''}`}
-                onClick={() => { setSelectedRegion(region.id); setSelectedProvince(null); }}
-              >
-                {region.name}
-              </button>
+        {regions.filter(r => selectedRegion ? r.id === selectedRegion : true).map(region => (
+          <div key={region.id}>
+            <button
+              className={`font-semibold ${selectedRegion === region.id ? 'text-blue-600' : ''}`}
+              onClick={() => { setSelectedRegion(region.id); setSelectedProvince(null); }}
+            >
+              {region.name}
+            </button>
 
-              {selectedRegion === region.id && (
-                <ProvinceList
-                  regionId={region.id}
-                  isActive={selectedProvince !== null}
-                  selectedProvince={selectedProvince}
-                  onSelectProvince={id => setSelectedProvince(id)}
-                />
-              )}
-            </div>
+            {selectedRegion === region.id && (
+              <ProvinceList
+                regionId={region.id}
+                selectedProvince={selectedProvince}
+                onSelectProvince={id => setSelectedProvince(id)}
+              />
+            )}
+          </div>
         ))}
       </div>
     </div>
@@ -83,17 +82,7 @@ function ProvinceCrumb({ regionId, provinceId, onClick }: { regionId: number; pr
   );
 }
 
-function ProvinceList({
-  regionId,
-  isActive,
-  selectedProvince,
-  onSelectProvince,
-}: {
-  regionId: number;
-  isActive: boolean;
-  selectedProvince: number | null;
-  onSelectProvince: (id: number) => void;
-}) {
+function ProvinceList({ regionId, selectedProvince, onSelectProvince }: { regionId: number; selectedProvince: number | null; onSelectProvince: (id: number) => void }) {
   const { data: provinces, error } = useSWR<Province[]>(`/api/regions/${regionId}/provinces`, fetcher);
   if (error) return <div>Errore nel caricamento delle province.</div>;
   if (!provinces) return <div>Caricamento delle province...</div>;
@@ -126,22 +115,19 @@ function PostList({ provinceId }: { provinceId: number }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { if (isCreating) inputRef.current?.focus(); }, [isCreating]);
-
   if (error) return <div>Errore nel caricamento dei post.</div>;
   if (!posts) return <div>Caricamento dei post...</div>;
 
   const createPost = async () => {
     if (!newText.trim()) return;
-    const res = await fetch(`/api/provinces/${provinceId}/posts`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: newText, content: newText }),
-    });
-    if (res.ok) {
-      setNewText('');
-      setCreating(false);
+    const { data, error } = await supabase
+      .from('posts')
+      .insert({ province_id: provinceId, content: newText, author: (await supabase.auth.getSession()).data.session!.user.id })
+      .select('id,content,author,created_at,province_id');
+    if (error) console.error('Errore creazione post', error);
+    else {
+      setNewText(''); setCreating(false);
       mutate(key);
-    } else {
-      console.error(await res.json());
     }
   };
 
