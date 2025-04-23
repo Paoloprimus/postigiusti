@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Estrai e valida provinceId dinamico
+  // 1) Validazione provinceId
   const { provinceId } = req.query;
   if (!provinceId || Array.isArray(provinceId)) {
     return res.status(400).json({ error: 'Invalid provinceId' });
@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'provinceId is not a number' });
   }
 
-  // GET: lista dei post
+  // 2) GET /api/provinces/:provinceId/posts?limit=5
   if (req.method === 'GET') {
     try {
       const limit = typeof req.query.limit === 'string'
@@ -21,8 +21,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         : undefined;
 
       let query = supabase
-        .from('posts') // ora usiamo la tabella posts, non listings
-        .select('id,title,author_id,created_at,isDeleted')
+        .from('posts')            // la tua tabella dei post
+        .select('id,content,author,created_at,province_id')
         .eq('province_id', pid)
         .order('created_at', { ascending: false });
 
@@ -33,22 +33,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data, error } = await query;
       if (error) {
         console.error('Supabase GET error:', error);
-        return res.status(500).json({ error: error.message, details: error });
+        return res.status(500).json({ error: error.message });
       }
-
-      return res.status(200).json(data);
+      return res.status(200).json(data ?? []);
     } catch (err: any) {
       console.error('Unexpected GET error:', err);
       return res.status(500).json({ error: err.message });
     }
   }
 
-  // POST: crea nuovo post
+  // 3) POST /api/provinces/:provinceId/posts
   if (req.method === 'POST') {
     const {
       data: { session }
     } = await supabase.auth.getSession();
-
     if (!session) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -59,24 +57,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { data, error } = await supabase
-      .from('posts') // usiamo posts per inserire
+      .from('posts')
       .insert({
         province_id: pid,
-        title,
-        content: content || '',
-        author_id: session.user.id,
+        content: title,        // se usi content per testo
+        author: session.user.id,
       })
-      .select('id,title,author_id,created_at,isDeleted');
+      .select('id,content,author,created_at,province_id');
 
     if (error) {
       console.error('Supabase POST error:', error);
       return res.status(500).json({ error: error.message });
     }
-
     return res.status(201).json(data![0]);
   }
 
-  // Metodo non supportato
+  // 4) Method not allowed
   res.setHeader('Allow', ['GET', 'POST']);
   return res.status(405).end(`Method ${req.method} Not Allowed`);
 }
