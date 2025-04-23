@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Estrai e valida provinceId dinamico
   const { provinceId } = req.query;
   if (!provinceId || Array.isArray(provinceId)) {
     return res.status(400).json({ error: 'Invalid provinceId' });
@@ -12,17 +13,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'provinceId is not a number' });
   }
 
-  // --- GET branch semplificato ---
+  // GET: lista dei post
   if (req.method === 'GET') {
     try {
-      // selezioniamo SOLO i campi base e l'id dell'autore
       const limit = typeof req.query.limit === 'string'
         ? parseInt(req.query.limit, 10)
         : undefined;
 
       let query = supabase
-        .from('listings')
-        .select('id, title, author_id, created_at, isDeleted')
+        .from('listings') // sostituisci con il nome corretto della tabella post
+        .select('*')
         .eq('province_id', pid)
         .order('created_at', { ascending: false });
 
@@ -31,26 +31,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase GET error:', error);
+        return res.status(500).json({ error: error.message, details: error });
+      }
+
       return res.status(200).json(data);
     } catch (err: any) {
-      console.error('Error fetching posts:', err);
+      console.error('Unexpected GET error:', err);
       return res.status(500).json({ error: err.message });
     }
   }
 
-  // --- POST branch rimane identico ---
+  // POST: crea nuovo post
   if (req.method === 'POST') {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+
     if (!session) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
+
     const { title, content } = req.body;
     if (!title || typeof title !== 'string') {
       return res.status(400).json({ error: 'Missing or invalid title' });
     }
+
     const { data, error } = await supabase
-      .from('listings')
+      .from('listings') // sostituisci con il nome corretto della tabella post
       .insert({
         province_id: pid,
         title,
@@ -60,12 +69,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select('*');
 
     if (error) {
-      console.error('Error creating post:', error);
+      console.error('Supabase POST error:', error);
       return res.status(500).json({ error: error.message });
     }
+
     return res.status(201).json(data![0]);
   }
 
-  res.setHeader('Allow', ['GET','POST']);
+  // Metodo non supportato
+  res.setHeader('Allow', ['GET', 'POST']);
   return res.status(405).end(`Method ${req.method} Not Allowed`);
 }
