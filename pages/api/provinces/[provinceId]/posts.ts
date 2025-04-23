@@ -21,8 +21,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         : undefined;
 
       let query = supabase
-        .from('listings') // sostituisci con il nome corretto della tabella post
-        .select('*')
+        .from('posts') // ora usiamo la tabella posts, non listings
+        .select('id,title,author_id,created_at,isDeleted')
         .eq('province_id', pid)
         .order('created_at', { ascending: false });
 
@@ -59,14 +59,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { data, error } = await supabase
-      .from('listings') // sostituisci con il nome corretto della tabella post
+      .from('posts') // usiamo posts per inserire
       .insert({
         province_id: pid,
         title,
         content: content || '',
         author_id: session.user.id,
       })
-      .select('*');
+      .select('id,title,author_id,created_at,isDeleted');
 
     if (error) {
       console.error('Supabase POST error:', error);
