@@ -5,10 +5,10 @@ import { fetcher } from '../lib/fetcher';
 import { supabase } from '../lib/supabase';
 
 // Tipi dati
-export type Region = { id: number; name: string };
-export type Province = { id: number; name: string };
-export type Post = { id: number; content: string; author: string; created_at: string; province_id: number; profiles: { nickname: string } };
-export type Comment = { id: number; content: string; author: string; created_at: string };
+type Region = { id: number; name: string };
+type Province = { id: number; name: string };
+type Post = { id: number; content: string; author: string; created_at: string; province_id: number };
+type Comment = { id: number; content: string; author: string; created_at: string };
 
 export default function AnnouncementsTree() {
   const { data: regions, error: regionsError } = useSWR<Region[]>('/api/regions', fetcher);
@@ -24,13 +24,13 @@ export default function AnnouncementsTree() {
     <div>
       {/* Breadcrumb */}
       <nav className="text-lg text-blue-600 mb-4 flex items-center gap-2">
-        <button onClick={() => { setSelectedRegion(null); setSelectedProvince(null); }} className="hover:underline">
+        <button className="hover:underline" onClick={() => { setSelectedRegion(null); setSelectedProvince(null); }}>
           Italia
         </button>
         {selectedRegion !== null && (
           <>
             <span>&gt;</span>
-            <button onClick={() => setSelectedProvince(null)} className="hover:underline">
+            <button className="hover:underline" onClick={() => setSelectedProvince(null)}>
               {regionName}
             </button>
           </>
@@ -45,11 +45,19 @@ export default function AnnouncementsTree() {
 
       {/* Vista dinamica */}
       {!selectedRegion ? (
-        <RegionList regions={regions} selected={selectedRegion} onSelect={setSelectedRegion} />
+        <RegionList
+          regions={regions}
+          selected={selectedRegion}
+          onSelect={setSelectedRegion}
+        />
       ) : selectedProvince === null ? (
-        <ProvinceList regionId={selectedRegion} selected={selectedProvince} onSelect={setSelectedProvince} />
+        <ProvinceList
+          regionId={selectedRegion}
+          selected={selectedProvince}
+          onSelect={setSelectedProvince}
+        />
       ) : (
-        <PostList provinceId={selectedProvince} />
+        <PostList provinceId={selectedProvince!} />
       )}
     </div>
   );
@@ -81,7 +89,10 @@ function ProvinceList({ regionId, selected, onSelect }: { regionId: number; sele
     <ul className="pl-4 space-y-1 italic">
       {provinces.map(p => (
         <li key={p.id}>
-          <button className={`${selected === p.id ? 'text-blue-600' : ''}`} onClick={() => onSelect(p.id)}>
+          <button
+            className={`${selected === p.id ? 'text-blue-600' : ''}`}
+            onClick={() => onSelect(p.id)}
+          >
             {p.name}
           </button>
         </li>
@@ -102,7 +113,28 @@ function PostList({ provinceId }: { provinceId: number }) {
   const [isCreating, setIsCreating] = useState(false);
   const [newText, setNewText] = useState('');
   const [expanded, setExpanded] = useState<number[]>([]);
+  const [nicknames, setNicknames] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch nicknames once posts load
+  useEffect(() => {
+    if (!posts) return;
+    const authors = Array.from(new Set(posts.map(p => p.author)));
+    if (authors.length) {
+      supabase
+        .from('profiles')
+        .select('id,nickname')
+        .in('id', authors)
+        .then(({ data, error }) => {
+          if (data) {
+            const map: Record<string, string> = {};
+            data.forEach(d => { map[d.id] = d.nickname; });
+            setNicknames(map);
+          }
+          if (error) console.error('Error fetching nicknames:', error);
+        });
+    }
+  }, [posts]);
 
   if (error) return <div>Errore caricamento post.</div>;
   if (!posts) return <div>Caricamento post...</div>;
@@ -119,7 +151,11 @@ function PostList({ provinceId }: { provinceId: number }) {
       .from('posts')
       .insert({ province_id: provinceId, content: newText, author: user.id });
     if (error) console.error('Errore creazione post:', error);
-    else { setNewText(''); setIsCreating(false); mutate(key); }
+    else {
+      setNewText('');
+      setIsCreating(false);
+      mutate(key);
+    }
   };
 
   return (
@@ -132,7 +168,7 @@ function PostList({ provinceId }: { provinceId: number }) {
             placeholder="Scrivi un nuovo annuncio…"
             value={newText}
             onChange={e => setNewText(e.target.value)}
-            onKeyDown={e => { if (e.key==='Enter') createPost(); if (e.key==='Escape') { setIsCreating(false); setNewText(''); } }}
+            onKeyDown={e => { if (e.key === 'Enter') createPost(); if (e.key === 'Escape') { setIsCreating(false); setNewText(''); } }}
             onBlur={() => setIsCreating(false)}
           />
         ) : (
@@ -141,10 +177,11 @@ function PostList({ provinceId }: { provinceId: number }) {
           </button>
         )}
       </li>
+
       {posts.map(post => (
-        <li key={post.id}>
+        <li key={post.id} className="space-y-1">
           <div onClick={() => toggle(post.id)} className="underline cursor-pointer">
-            {post.content} <small>[{post.profiles?.nickname || post.author}]</small>
+            {post.content} <small>[{nicknames[post.author] || post.author}]</small>
           </div>
           {expanded.includes(post.id) && <CommentList postId={post.id} postAuthorId={post.author} />}
         </li>
@@ -167,7 +204,7 @@ function CommentList({ postId, postAuthorId }: { postId: number; postAuthorId: s
       {comments.map(c => (
         <li key={c.id} className="flex items-center">
           <span className="text-sm">{c.content}</span>
-          <small className="ml-2">[{c.author}]</small>
+          <small className="ml-2">[{nicknames[c.author] || c.author}]</small>
           {userId === postAuthorId && <button className="ml-2 text-blue-500 text-xs">Rispondi</button>}
         </li>
       ))}
