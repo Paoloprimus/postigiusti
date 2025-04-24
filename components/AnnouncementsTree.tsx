@@ -135,7 +135,9 @@ function PostList({ provinceId }: { provinceId: number }) {
   // create
   const createPost = async () => {
     if (!newText.trim()) return;
-    const userId = supabase.auth.getUser()?.data.user?.id;
+    // Ora await getUser per ottenere user.id
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id;
     const { error } = await supabase
       .from('posts')
       .insert({ province_id, content: newText, author: userId })
