@@ -105,17 +105,18 @@ function PostList({ provinceId }: { provinceId: number }) {
   const [isCreating, setIsCreating] = useState(false);
   const [newText, setNewText] = useState('');
   const [expanded, setExpanded] = useState<number[]>([]);
+  const [emailMap, setEmailMap] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!posts || posts.length === 0) return;
-    // Filtra solo UUID validi per evitare errori di tipo
     const ids = Array.from(new Set(
       posts
         .map(p => p.author)
         .filter(id => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
     ));
     if (ids.length === 0) return;
+
     supabase
       .from('profiles')
       .select('id,email')
@@ -125,24 +126,36 @@ function PostList({ provinceId }: { provinceId: number }) {
           console.error('Errore fetch profili:', error);
           return;
         }
-        const m: Record<string,string> = {};
+        const m: Record<string, string> = {};
         data!.forEach(p => { m[p.id] = p.email; });
         setEmailMap(m);
       });
-  }, [posts]); if (isCreating) inputRef.current?.focus(); }, [isCreating]);
-  if (error) return <div>Errore caricamento post.</div>;
-  if (!posts) return <div>Caricamento post...</div>;
+  }, [posts]);
 
-  const toggle = (id: number) => setExpanded(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  useEffect(() => {
+    if (isCreating) inputRef.current?.focus();
+  }, [isCreating]);
 
   const createPost = async () => {
     if (!newText.trim()) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { error } = await supabase.from('posts').insert({ province_id: provinceId, content: newText, author: user.id });
-    if (error) console.error('Errore creazione post:', error);
-    else { setNewText(''); setIsCreating(false); mutate(key); }
+    if (error) {
+      console.error('Errore creazione post:', error);
+    } else {
+      setNewText('');
+      setIsCreating(false);
+      mutate(key);
+    }
   };
+
+  const toggle = (id: number) => {
+    setExpanded(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  if (error) return <div>Errore caricamento post.</div>;
+  if (!posts) return <div>Caricamento post...</div>;
 
   return (
     <ul className="pl-8 space-y-1">
@@ -154,7 +167,10 @@ function PostList({ provinceId }: { provinceId: number }) {
             placeholder="Scrivi un nuovo annuncio…"
             value={newText}
             onChange={e => setNewText(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') createPost(); if (e.key === 'Escape') { setIsCreating(false); setNewText(''); } }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') createPost();
+              if (e.key === 'Escape') { setIsCreating(false); setNewText(''); }
+            }}
             onBlur={() => setIsCreating(false)}
           />
         ) : (
@@ -167,15 +183,18 @@ function PostList({ provinceId }: { provinceId: number }) {
       {posts.map(post => (
         <li key={post.id} className="space-y-1">
           <div onClick={() => toggle(post.id)} className="underline cursor-pointer">
-            {post.content} <small>[{post.author}]</small>
+            {post.content} <small>[{emailMap[post.author] || post.author}]</small>
           </div>
           {expanded.includes(post.id) && <CommentList postId={post.id} postAuthorId={post.author} />}
         </li>
       ))}
-      {posts.length === 0 && !isCreating && <li className="italic text-gray-500">Ancora nessun annuncio</li>}
+      {posts.length === 0 && !isCreating && (
+        <li className="italic text-gray-500">Ancora nessun annuncio</li>
+      )}
     </ul>
   );
 }
+
 
 function CommentList({ postId, postAuthorId }: { postId: number; postAuthorId: string }) {
   const { data: comments, error } = useSWR<Comment[]>(`/api/posts/${postId}/comments?limit=5`, fetcher);
