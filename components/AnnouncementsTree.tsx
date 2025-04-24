@@ -15,6 +15,7 @@ type Post = {
   province_id: number;
   profiles: { nickname: string };
 };
+
 type Comment = { id: number; content: string; author: string; created_at: string };
 
 export default function AnnouncementsTree() {
@@ -27,9 +28,9 @@ export default function AnnouncementsTree() {
 
   const regionName = regions.find(r => r.id === selectedRegion)?.name;
 
+  // Breadcrumb
   return (
     <div>
-      {/* Breadcrumb */}
       <nav className="text-lg text-blue-600 mb-4 flex items-center gap-2">
         <button className="hover:underline" onClick={() => { setSelectedRegion(null); setSelectedProvince(null); }}>
           Italia
@@ -46,17 +47,17 @@ export default function AnnouncementsTree() {
           <>
             <span>&gt;</span>
             <button className="hover:underline" onClick={() => setSelectedProvince(null)}>
-              <ProvinceCrumb regionId={selectedRegion!} provinceId={selectedProvince} />
+              {selectedProvince}
             </button>
           </>
         )}
+
       </nav>
 
-      {/* Contenuto dinamico: regioni → province → postlist */}
       {!selectedRegion ? (
-        <RegionList regions={regions} selectedRegion={selectedRegion} onSelectRegion={id => setSelectedRegion(id)} />
+        <RegionList regions={regions} selectedRegion={selectedRegion} onSelectRegion={setSelectedRegion} />
       ) : !selectedProvince ? (
-        <ProvinceList regionId={selectedRegion} selectedProvince={selectedProvince} onSelectProvince={id => setSelectedProvince(id)} />
+        <ProvinceList regionId={selectedRegion} selectedProvince={selectedProvince} onSelectProvince={setSelectedProvince} />
       ) : (
         <PostList provinceId={selectedProvince} />
       )}
@@ -69,10 +70,7 @@ function RegionList({ regions, selectedRegion, onSelectRegion }: { regions: Regi
     <ul className="space-y-2">
       {regions.map(r => (
         <li key={r.id}>
-          <button
-            className={`font-semibold ${selectedRegion === r.id ? 'text-blue-600' : ''}`}
-            onClick={() => onSelectRegion(r.id)}
-          >
+          <button className={`${selectedRegion===r.id?'text-blue-600':'font-semibold'}`} onClick={()=>onSelectRegion(r.id)}>
             {r.name}
           </button>
         </li>
@@ -90,10 +88,7 @@ function ProvinceList({ regionId, selectedProvince, onSelectProvince }: { region
     <ul className="pl-4 space-y-1 italic">
       {provinces.map(p => (
         <li key={p.id}>
-          <button
-            className={`${selectedProvince === p.id ? 'text-blue-600' : ''}`}
-            onClick={() => onSelectProvince(p.id)}
-          >
+          <button className={`${selectedProvince===p.id?'text-blue-600':''}`} onClick={()=>onSelectProvince(p.id)}>
             {p.name}
           </button>
         </li>
@@ -102,78 +97,62 @@ function ProvinceList({ regionId, selectedProvince, onSelectProvince }: { region
   );
 }
 
-function ProvinceCrumb({ regionId, provinceId }: { regionId: number; provinceId: number }) {
-  const { data: provinces } = useSWR<Province[]>(`/api/regions/${regionId}/provinces`, fetcher);
-  return <>{provinces?.find(p => p.id === provinceId)?.name}</>;
-}
-
 function PostList({ provinceId }: { provinceId: number }) {
   const key = `/api/provinces/${provinceId}/posts?limit=5`;
-  const { data: posts = [], error } = useSWR<Post[]>(key, fetcher);
+  const { data: posts=[], error } = useSWR<Post[]>(key, fetcher);
   const [isCreating, setCreating] = useState(false);
   const [newText, setNewText] = useState('');
   const [expanded, setExpanded] = useState<number[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (isCreating) inputRef.current?.focus(); }, [isCreating]);
-  if (error) return <div>Errore caricamento post.</div>;
-  if (!posts) return <div>Caricamento post...</div>;
+  useEffect(()=>{ if(isCreating) inputRef.current?.focus(); },[isCreating]);
+  if(error) return <div>Errore caricamento post.</div>;
+  if(!posts) return <div>Caricamento post...</div>;
 
-  const toggle = (id: number) => {
-    setExpanded(exp => (exp.includes(id) ? exp.filter(x => x !== id) : [...exp, id]));
+  const toggle = (id:number)=>{
+    setExpanded(exp=> exp.includes(id)?exp.filter(x=>x!==id):[...exp,id]);
   };
 
-  const createPost = async () => {
-    if (!newText.trim()) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { error } = await supabase
-      .from('posts')
-      .insert({ province_id: provinceId, content: newText, author: user.id })
-      .select();
-    if (error) console.error('Errore creazione post:', error);
-    else {
-      setNewText(''); setCreating(false);
-      mutate(key);
-    }
+  const createPost=async()=>{
+    if(!newText.trim())return;
+    const { data:{ user }}=await supabase.auth.getUser();
+    if(!user)return;
+    const { error }=await supabase.from('posts').insert({ province_id:provinceId,content:newText,author:user.id });
+    if(error)console.error('Errore creazione post:',error);
+    else{ setNewText('');setCreating(false); mutate(key);}  
   };
 
-  return (
+  return(
     <ul className="pl-8 space-y-1">
       <li>
-        {isCreating ? (
+        {isCreating? (
           <input
             ref={inputRef}
             type="text"
             className="w-full p-1 border rounded"
             placeholder="Scrivi un nuovo annuncio…"
             value={newText}
-            onChange={e => setNewText(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') createPost();
-              if (e.key === 'Escape') { setCreating(false); setNewText(''); }
-            }}
-            onBlur={() => setCreating(false)}
+            onChange={e=>setNewText(e.target.value)}
+            onKeyDown={e=>{ if(e.key==='Enter')createPost(); if(e.key==='Escape'){setCreating(false);setNewText('');}}}
+            onBlur={()=>setCreating(false)}
           />
-        ) : (
-          <button className="text-green-600 hover:underline text-sm" onClick={() => setCreating(true)}>
+        ):(
+          <button className="text-green-600 hover:underline text-sm" onClick={()=>setCreating(true)}>
             + Scrivi un annuncio
           </button>
         )}
       </li>
 
-      {posts.map(post => (
-        <li key={post.id} className={`${post.profiles.nickname ? '' : 'opacity-50'}`}> 
-          <div onClick={() => toggle(post.id)} className="underline cursor-pointer">
-            {post.content}{' '}
-            <small>[{post.profiles.nickname}]</small>{' '}
-            <small>[{new Date(post.created_at).toLocaleDateString()}]</small>
+      {posts.map(post=>(
+        <li key={post.id} className={`${!post.profiles?.nickname?'opacity-50':''}`}>
+          <div onClick={()=>toggle(post.id)} className="underline cursor-pointer">
+            {post.content} <small>[{post.profiles.nickname}]</small> <small>[{new Date(post.created_at).toLocaleDateString()}]</small>
           </div>
-          {expanded.includes(post.id) && <CommentList postId={post.id} postAuthorId={post.author} />}
+          {expanded.includes(post.id)&& <CommentList postId={post.id} postAuthorId={post.author}/>}  
         </li>
       ))}
 
-      {posts.length === 0 && !isCreating && (
+      {posts.length===0&&!isCreating&&(
         <li className="italic text-gray-500">Ancora nessun annuncio</li>
       )}
     </ul>
@@ -187,12 +166,12 @@ function CommentList({ postId, postAuthorId }: { postId: number; postAuthorId: s
 
   return (
     <ul className="pl-12 space-y-1">
-      {comments.map(c => (
+      {comments.map(c=>(
         <li key={c.id} className="flex items-center">
           <span className="text-sm">{c.content}</span>
           <small className="ml-2">[{c.author}]</small>
-          {userId === postAuthorId && (
-            <button className="ml-2 text-blue-500 text-xs" onClick={() => {/* rispondi */}}>
+          {userId===postAuthorId&&(
+            <button className="ml-2 text-blue-500 text-xs" onClick={()=>{/* rispondi */}}>
               Rispondi
             </button>
           )}
