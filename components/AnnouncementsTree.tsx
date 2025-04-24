@@ -1,25 +1,29 @@
 // components/AnnouncementsTree.tsx
-import React, { useState, useEffect, useRef } from 'react';
-import useSWR, { mutate } from 'swr';
+import React, { useState } from 'react';
+import useSWR from 'swr';
 import { fetcher } from '../lib/fetcher';
-import { supabase } from '../lib/supabase';
 
-type Region = { id: number; name: string };
-type Province = { id: number; name: string };
-type Post = { id: number; content: string; author: string; created_at: string; province_id: number };
-
-type Profile = { id: string; nickname: string };
-
-type Comment = { id: number; content: string; author: string; created_at: string };
+// Tipi dati
+export type Region = { id: number; name: string };
+export type Province = { id: number; name: string };
+export type Post = {
+  id: number;
+  content: string;
+  author: string;
+  created_at: string;
+  province_id: number;
+  profiles: { nickname: string };
+};
 
 export default function AnnouncementsTree() {
-  const { data: regions } = useSWR<Region[]>('/api/regions', fetcher);
+  const { data: regions, error: regionsError } = useSWR<Region[]>('/api/regions', fetcher);
   const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
   const [selectedProvince, setSelectedProvince] = useState<number | null>(null);
 
+  if (regionsError) return <div>Errore caricamento regioni.</div>;
   if (!regions) return <div>Caricamento regioni...</div>;
 
-  const regionName = regions.find(r => r.id === selectedRegion)?.name;
+  const regionName = regions.find(r => r.id === selectedRegion)?.name || '';
 
   return (
     <div>
@@ -28,7 +32,7 @@ export default function AnnouncementsTree() {
         <button className="hover:underline" onClick={() => { setSelectedRegion(null); setSelectedProvince(null); }}>
           Italia
         </button>
-        {selectedRegion != null && (
+        {selectedRegion !== null && (
           <>
             <span>&gt;</span>
             <button className="hover:underline" onClick={() => setSelectedProvince(null)}>
@@ -36,7 +40,7 @@ export default function AnnouncementsTree() {
             </button>
           </>
         )}
-        {selectedProvince != null && (
+        {selectedProvince !== null && (
           <>
             <span>&gt;</span>
             <ProvinceCrumb regionId={selectedRegion!} provinceId={selectedProvince} />
@@ -44,11 +48,11 @@ export default function AnnouncementsTree() {
         )}
       </nav>
 
-      {/* Content */}
+      {/* Vista dinamica */}
       {!selectedRegion ? (
-        <RegionList regions={regions} onSelect={setSelectedRegion} selected={selectedRegion} />
-      ) : !selectedProvince ? (
-        <ProvinceList regionId={selectedRegion} onSelect={setSelectedProvince} selected={selectedProvince} />
+        <RegionList regions={regions} selected={selectedRegion} onSelect={setSelectedRegion} />
+      ) : selectedProvince === null ? (
+        <ProvinceList regionId={selectedRegion} selected={selectedProvince} onSelect={setSelectedProvince} />
       ) : (
         <PostList provinceId={selectedProvince} />
       )}
@@ -56,16 +60,17 @@ export default function AnnouncementsTree() {
   );
 }
 
-function RegionList({ regions, onSelect, selected }: { regions: Region[]; onSelect: (id: number) => void; selected: number | null }) {
+// Lista regioni
+function RegionList({ regions, selected, onSelect }: { regions: Region[]; selected: number | null; onSelect: (id: number) => void }) {
   return (
     <ul className="space-y-2">
-      {regions.map(r => (
-        <li key={r.id}>
+      {regions.map(region => (
+        <li key={region.id}>
           <button
-            className={`${selected === r.id ? 'text-blue-600' : 'font-semibold'}`}
-            onClick={() => onSelect(r.id)}
+            className={`${selected === region.id ? 'text-blue-600' : 'font-semibold'}`}
+            onClick={() => onSelect(region.id)}
           >
-            {r.name}
+            {region.name}
           </button>
         </li>
       ))}
@@ -73,15 +78,21 @@ function RegionList({ regions, onSelect, selected }: { regions: Region[]; onSele
   );
 }
 
-function ProvinceList({ regionId, onSelect, selected }: { regionId: number; onSelect: (id: number) => void; selected: number | null }) {
-  const { data: provinces } = useSWR<Province[]>(`/api/regions/${regionId}/provinces`, fetcher);
+// Lista province
+function ProvinceList({ regionId, selected, onSelect }: { regionId: number; selected: number | null; onSelect: (id: number) => void }) {
+  const { data: provinces, error } = useSWR<Province[]>(`/api/regions/${regionId}/provinces`, fetcher);
+  if (error) return <div>Errore caricamento province.</div>;
   if (!provinces) return <div>Caricamento province...</div>;
+
   return (
     <ul className="pl-4 space-y-1 italic">
-      {provinces.map(p => (
-        <li key={p.id}>
-          <button className={`${selected === p.id ? 'text-blue-600' : ''}`} onClick={() => onSelect(p.id)}>
-            {p.name}
+      {provinces.map(prov => (
+        <li key={prov.id}>
+          <button
+            className={`${selected === prov.id ? 'text-blue-600' : ''}`}
+            onClick={() => onSelect(prov.id)}
+          >
+            {prov.name}
           </button>
         </li>
       ))}
@@ -89,35 +100,38 @@ function ProvinceList({ regionId, onSelect, selected }: { regionId: number; onSe
   );
 }
 
+// Breadcrumb snippet provincia
 function ProvinceCrumb({ regionId, provinceId }: { regionId: number; provinceId: number }) {
   const { data: provinces } = useSWR<Province[]>(`/api/regions/${regionId}/provinces`, fetcher);
   const prov = provinces?.find(p => p.id === provinceId);
   return prov ? <span className="font-semibold text-blue-600">{prov.name}</span> : null;
 }
 
+// Lista post con toggle commenti inline
 function PostList({ provinceId }: { provinceId: number }) {
   const key = `/api/provinces/${provinceId}/posts?limit=5`;
   const { data: posts, error } = useSWR<Post[]>(key, fetcher);
-  const [isCreating, setIsCreating] = useState(false);
+  const [isCreating, setCreating] = useState(false);
   const [newText, setNewText] = useState('');
   const [expanded, setExpanded] = useState<number[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (isCreating) inputRef.current?.focus(); }, [isCreating]);
   if (error) return <div>Errore caricamento post.</div>;
   if (!posts) return <div>Caricamento post...</div>;
 
   const toggle = (id: number) => {
-    setExpanded(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    setExpanded(exp => exp.includes(id) ? exp.filter(x => x !== id) : [...exp, id]);
   };
 
   const createPost = async () => {
     if (!newText.trim()) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { error } = await supabase.from('posts').insert({ province_id: provinceId, content: newText, author: user.id });
-    if (error) console.error(error);
-    else { setNewText(''); setIsCreating(false); mutate(key); }
+    const { error } = await supabase
+      .from('posts')
+      .insert({ province_id: provinceId, content: newText, author: user.id });
+    if (error) console.error('Errore creazione post:', error);
+    else { setNewText(''); setCreating(false); mutate(key); }
   };
 
   return (
@@ -130,24 +144,21 @@ function PostList({ provinceId }: { provinceId: number }) {
             placeholder="Scrivi un nuovo annuncio…"
             value={newText}
             onChange={e => setNewText(e.target.value)}
-            onKeyDown={e => { if (e.key==='Enter') createPost(); if (e.key==='Escape') { setIsCreating(false); setNewText(''); } }}
-            onBlur={() => setIsCreating(false)}
+            onKeyDown={e => { if (e.key === 'Enter') createPost(); if (e.key === 'Escape') { setCreating(false); setNewText(''); } }}
+            onBlur={() => setCreating(false)}
           />
         ) : (
-          <button className="text-green-600 hover:underline text-sm" onClick={() => setIsCreating(true)}>
+          <button className="text-green-600 hover:underline text-sm" onClick={() => setCreating(true)}>
             + Scrivi un annuncio
           </button>
         )}
       </li>
-
       {posts.map(post => (
-        <li key={post.id} className="space-y-1">
+        <li key={post.id}>
           <div onClick={() => toggle(post.id)} className="underline cursor-pointer">
-            {post.content}
+            {post.content} <small>[{post.profiles?.nickname || post.author}]</small>
           </div>
-          {expanded.includes(post.id) && (
-            <CommentList postId={post.id} postAuthorId={post.author} />
-          )}
+          {expanded.includes(post.id) && <CommentList postId={post.id} postAuthorId={post.author} />}
         </li>
       ))}
       {posts.length === 0 && !isCreating && <li className="italic text-gray-500">Ancora nessun annuncio</li>}
@@ -155,6 +166,7 @@ function PostList({ provinceId }: { provinceId: number }) {
   );
 }
 
+// Lista commenti inline (placeholder)
 function CommentList({ postId, postAuthorId }: { postId: number; postAuthorId: string }) {
   const { data: comments, error } = useSWR<Comment[]>(`/api/posts/${postId}/comments?limit=5`, fetcher);
   const { data: { user } = {} } = useSWR(() => supabase.auth.getUser(), fetcher);
