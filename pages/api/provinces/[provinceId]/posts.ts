@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'provinceId is not a number' });
   }
 
-  // GET: lista post con nickname
+  // Branch GET: lista post con nickname dell'autore
   if (req.method === 'GET') {
     try {
       const limit = typeof req.query.limit === 'string'
@@ -22,14 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       let query = supabase
         .from('posts')
-        .select(`
-          id,
-          content,
-          author,
-          created_at,
-          province_id,
-          profiles!posts_author_fkey ( nickname )
-        `)
+        .select('id,content,author,created_at,province_id,profiles(nickname)')
         .eq('province_id', pid)
         .order('created_at', { ascending: false });
 
@@ -47,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 
-  // POST: crea nuovo post
+  // Branch POST: crea nuovo post
   if (req.method === 'POST') {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -57,17 +50,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!title || typeof title !== 'string') {
       return res.status(400).json({ error: 'Missing or invalid title' });
     }
+
     const { data, error } = await supabase
       .from('posts')
       .insert({ province_id: pid, content: title, author: user.id })
-      .select(`
-        id,
-        content,
-        author,
-        created_at,
-        province_id,
-        profiles!posts_author_fkey ( nickname )
-      `);
+      .select('id,content,author,created_at,province_id,profiles(nickname)');
+
     if (error) {
       console.error('Supabase POST error:', error);
       return res.status(500).json({ error: error.message });
@@ -75,7 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(201).json(data![0]);
   }
 
-  // Method not allowed
+  // Metodo non supportato
   res.setHeader('Allow', ['GET', 'POST']);
   return res.status(405).end(`Method ${req.method} Not Allowed`);
 }
