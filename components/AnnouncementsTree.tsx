@@ -1,6 +1,6 @@
 // components/AnnouncementsTree.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { fetcher } from '../lib/fetcher';
 import { supabase } from '../lib/supabase';
 
