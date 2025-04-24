@@ -7,7 +7,14 @@ import { supabase } from '../lib/supabase';
 // Tipi dati
 type Region = { id: number; name: string };
 type Province = { id: number; name: string };
-type Post = { id: number; content: string; author: string; created_at: string; isDeleted: boolean };
+type Post = {
+  id: number;
+  content: string;
+  author: string;
+  created_at: string;
+  province_id: number;
+  profiles: { nickname: string };
+};
 type Comment = { id: number; content: string; author: string; created_at: string };
 
 export default function AnnouncementsTree() {
@@ -15,16 +22,13 @@ export default function AnnouncementsTree() {
   const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
   const [selectedProvince, setSelectedProvince] = useState<number | null>(null);
 
-  if (regionsError) return <div>Errore nel caricamento delle regioni.</div>;
-  if (!regions) return <div>Caricamento delle regioni...</div>;
+  if (regionsError) return <div>Errore caricamento regioni.</div>;
+  if (!regions) return <div>Caricamento regioni...</div>;
 
-  // Nome per breadcrumb
   const regionName = regions.find(r => r.id === selectedRegion)?.name;
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Bacheca</h1>
-
       {/* Breadcrumb */}
       <nav className="text-lg text-blue-600 mb-4 flex items-center gap-2">
         <button className="hover:underline" onClick={() => { setSelectedRegion(null); setSelectedProvince(null); }}>
@@ -41,26 +45,25 @@ export default function AnnouncementsTree() {
         {selectedProvince && (
           <>
             <span>&gt;</span>
-            <button className="hover:underline" onClick={() => { /* torna a regione */ setSelectedProvince(null); }}>
-              {<ProvinceCrumb regionId={selectedRegion!} provinceId={selectedProvince} />}
+            <button className="hover:underline" onClick={() => setSelectedProvince(null)}>
+              <ProvinceCrumb regionId={selectedRegion!} provinceId={selectedProvince} />
             </button>
           </>
         )}
       </nav>
 
-      {/* Contenuto: tree o post list */}
-      {selectedProvince ? (
-        <PostList provinceId={selectedProvince} />
-      ) : selectedRegion ? (
-        <ProvinceList regionId={selectedRegion} selectedProvince={selectedProvince} onSelectProvince={setSelectedProvince} />
+      {/* Contenuto dinamico: regioni → province → postlist */}
+      {!selectedRegion ? (
+        <RegionList regions={regions} selectedRegion={selectedRegion} onSelectRegion={id => setSelectedRegion(id)} />
+      ) : !selectedProvince ? (
+        <ProvinceList regionId={selectedRegion} selectedProvince={selectedProvince} onSelectProvince={id => setSelectedProvince(id)} />
       ) : (
-        <RegionList onSelectRegion={id => { setSelectedRegion(id); setSelectedProvince(null); }} selectedRegion={selectedRegion} regions={regions} />
+        <PostList provinceId={selectedProvince} />
       )}
     </div>
   );
 }
 
-// Lista regioni
 function RegionList({ regions, selectedRegion, onSelectRegion }: { regions: Region[]; selectedRegion: number | null; onSelectRegion: (id: number) => void }) {
   return (
     <ul className="space-y-2">
@@ -78,11 +81,10 @@ function RegionList({ regions, selectedRegion, onSelectRegion }: { regions: Regi
   );
 }
 
-// Lista province
 function ProvinceList({ regionId, selectedProvince, onSelectProvince }: { regionId: number; selectedProvince: number | null; onSelectProvince: (id: number) => void }) {
   const { data: provinces, error } = useSWR<Province[]>(`/api/regions/${regionId}/provinces`, fetcher);
-  if (error) return <div>Errore nel caricamento delle province.</div>;
-  if (!provinces) return <div>Caricamento delle province...</div>;
+  if (error) return <div>Errore caricamento province.</div>;
+  if (!provinces) return <div>Caricamento province...</div>;
 
   return (
     <ul className="pl-4 space-y-1 italic">
@@ -100,57 +102,41 @@ function ProvinceList({ regionId, selectedProvince, onSelectProvince }: { region
   );
 }
 
-// Breadcrumb snippet per provincia
 function ProvinceCrumb({ regionId, provinceId }: { regionId: number; provinceId: number }) {
   const { data: provinces } = useSWR<Province[]>(`/api/regions/${regionId}/provinces`, fetcher);
-  const name = provinces?.find(p => p.id === provinceId)?.name;
-  return <>{name}</>;
+  return <>{provinces?.find(p => p.id === provinceId)?.name}</>;
 }
 
-// Lista post con inline create, nickname e commenti expand
 function PostList({ provinceId }: { provinceId: number }) {
   const key = `/api/provinces/${provinceId}/posts?limit=5`;
   const { data: posts = [], error } = useSWR<Post[]>(key, fetcher);
   const [isCreating, setCreating] = useState(false);
   const [newText, setNewText] = useState('');
-  const [nicknames, setNicknames] = useState<Record<string,string>>({});
   const [expanded, setExpanded] = useState<number[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // autofocus input
   useEffect(() => { if (isCreating) inputRef.current?.focus(); }, [isCreating]);
-
-  // fetch nicknames
-  useEffect(() => {
-    const ids = Array.from(new Set(posts.map(p => p.author)));
-    if (!ids.length) return;
-    supabase.from('profiles').select('id,nickname').in('id', ids).then(({ data }) => {
-      if (data) setNicknames(Object.fromEntries(data.map(d => [d.id, d.nickname])));
-    });
-  }, [posts]);
-
   if (error) return <div>Errore caricamento post.</div>;
   if (!posts) return <div>Caricamento post...</div>;
 
-  // create
+  const toggle = (id: number) => {
+    setExpanded(exp => (exp.includes(id) ? exp.filter(x => x !== id) : [...exp, id]));
+  };
+
   const createPost = async () => {
     if (!newText.trim()) return;
-    // Ora await getUser per ottenere user.id
     const { data: { user } } = await supabase.auth.getUser();
-    const userId = user?.id;
+    if (!user) return;
     const { error } = await supabase
       .from('posts')
-      .insert({ province_id: provinceId, content: newText, author: userId })
+      .insert({ province_id: provinceId, content: newText, author: user.id })
       .select();
-    if (error) console.error(error);
+    if (error) console.error('Errore creazione post:', error);
     else {
       setNewText(''); setCreating(false);
       mutate(key);
     }
   };
-
-  // toggle expand comments
-  const toggle = (id: number) => setExpanded(expanded.includes(id) ? expanded.filter(x => x !== id) : [...expanded, id]);
 
   return (
     <ul className="pl-8 space-y-1">
@@ -163,7 +149,10 @@ function PostList({ provinceId }: { provinceId: number }) {
             placeholder="Scrivi un nuovo annuncio…"
             value={newText}
             onChange={e => setNewText(e.target.value)}
-            onKeyDown={e => { if (e.key==='Enter') createPost(); if (e.key==='Escape') { setCreating(false); setNewText(''); } }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') createPost();
+              if (e.key === 'Escape') { setCreating(false); setNewText(''); }
+            }}
             onBlur={() => setCreating(false)}
           />
         ) : (
@@ -174,25 +163,41 @@ function PostList({ provinceId }: { provinceId: number }) {
       </li>
 
       {posts.map(post => (
-        <li key={post.id} className={`${post.isDeleted?'opacity-50':''}`}> 
+        <li key={post.id} className={`${post.profiles.nickname ? '' : 'opacity-50'}`}> 
           <div onClick={() => toggle(post.id)} className="underline cursor-pointer">
-            {post.content} <small>[{nicknames[post.author]||post.author}]</small> [{new Date(post.created_at).toLocaleDateString()}]
+            {post.content}{' '}
+            <small>[{post.profiles.nickname}]</small>{' '}
+            <small>[{new Date(post.created_at).toLocaleDateString()}]</small>
           </div>
-          {expanded.includes(post.id) && (
-            <CommentList postId={post.id} postAuthorId={post.author} />
-          )}
+          {expanded.includes(post.id) && <CommentList postId={post.id} postAuthorId={post.author} />}
         </li>
       ))}
 
-      {posts.length===0 && !isCreating && (
+      {posts.length === 0 && !isCreating && (
         <li className="italic text-gray-500">Ancora nessun annuncio</li>
       )}
     </ul>
   );
 }
 
-// CommentList rimane... (omesso per brevità)
 function CommentList({ postId, postAuthorId }: { postId: number; postAuthorId: string }) {
-  // ... implement inline comment like PostList
-  return <div className="pl-12 italic text-gray-500">[Lista commenti qui]</div>;
+  const { data: comments = [] } = useSWR<Comment[]>(`/api/posts/${postId}/comments?limit=5`, fetcher);
+  const { data: { user } = {} } = useSWR(() => supabase.auth.getUser(), fetcher);
+  const userId = user?.id;
+
+  return (
+    <ul className="pl-12 space-y-1">
+      {comments.map(c => (
+        <li key={c.id} className="flex items-center">
+          <span className="text-sm">{c.content}</span>
+          <small className="ml-2">[{c.author}]</small>
+          {userId === postAuthorId && (
+            <button className="ml-2 text-blue-500 text-xs" onClick={() => {/* rispondi */}}>
+              Rispondi
+            </button>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
 }
