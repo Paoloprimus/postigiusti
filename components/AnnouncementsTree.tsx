@@ -140,7 +140,7 @@ function PostList({ provinceId }: { provinceId: number }) {
     const userId = user?.id;
     const { error } = await supabase
       .from('posts')
-      .insert({ province_id, content: newText, author: userId })
+      .insert({ province_id: provinceId, content: newText, author: userId })
       .select();
     if (error) console.error(error);
     else {
