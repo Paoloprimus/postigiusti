@@ -180,3 +180,36 @@ function PostList({ provinceId }: { provinceId: number }) {
     </ul>
   );
 }
+// subito dopo la chiusura di PostList
+function CommentList({
+  postId,
+  postAuthorId,
+}: {
+  postId: number;
+  postAuthorId: string;
+}) {
+  // usa lo stesso fetcher per i commenti
+  const { data: comments, error } = useSWR<Comment[]>(
+    `/api/posts/${postId}/comments?limit=5`,
+    fetcher
+  );
+  const { data: { user } = {} } = useSWR(() => supabase.auth.getUser(), fetcher);
+  const me = user?.id;
+
+  if (error) return <div>Errore caricamento commenti.</div>;
+  if (!comments) return <div>Caricamento commenti…</div>;
+
+  return (
+    <ul className="pl-12 space-y-1">
+      {comments.map(c => (
+        <li key={c.id} className="flex items-center">
+          <span className="text-sm">{c.content}</span>
+          <small className="ml-2">[{c.author}]</small>
+          {me === postAuthorId && (
+            <button className="ml-2 text-blue-500 text-xs">Rispondi</button>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
