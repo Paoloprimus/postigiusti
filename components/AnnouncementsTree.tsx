@@ -1,19 +1,14 @@
 // components/AnnouncementsTree.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import { fetcher } from '../lib/fetcher';
+import { supabase } from '../lib/supabase';
 
 // Tipi dati
 export type Region = { id: number; name: string };
 export type Province = { id: number; name: string };
-export type Post = {
-  id: number;
-  content: string;
-  author: string;
-  created_at: string;
-  province_id: number;
-  profiles: { nickname: string };
-};
+export type Post = { id: number; content: string; author: string; created_at: string; province_id: number; profiles: { nickname: string } };
+export type Comment = { id: number; content: string; author: string; created_at: string };
 
 export default function AnnouncementsTree() {
   const { data: regions, error: regionsError } = useSWR<Region[]>('/api/regions', fetcher);
@@ -29,13 +24,13 @@ export default function AnnouncementsTree() {
     <div>
       {/* Breadcrumb */}
       <nav className="text-lg text-blue-600 mb-4 flex items-center gap-2">
-        <button className="hover:underline" onClick={() => { setSelectedRegion(null); setSelectedProvince(null); }}>
+        <button onClick={() => { setSelectedRegion(null); setSelectedProvince(null); }} className="hover:underline">
           Italia
         </button>
         {selectedRegion !== null && (
           <>
             <span>&gt;</span>
-            <button className="hover:underline" onClick={() => setSelectedProvince(null)}>
+            <button onClick={() => setSelectedProvince(null)} className="hover:underline">
               {regionName}
             </button>
           </>
@@ -60,7 +55,6 @@ export default function AnnouncementsTree() {
   );
 }
 
-// Lista regioni
 function RegionList({ regions, selected, onSelect }: { regions: Region[]; selected: number | null; onSelect: (id: number) => void }) {
   return (
     <ul className="space-y-2">
@@ -78,7 +72,6 @@ function RegionList({ regions, selected, onSelect }: { regions: Region[]; select
   );
 }
 
-// Lista province
 function ProvinceList({ regionId, selected, onSelect }: { regionId: number; selected: number | null; onSelect: (id: number) => void }) {
   const { data: provinces, error } = useSWR<Province[]>(`/api/regions/${regionId}/provinces`, fetcher);
   if (error) return <div>Errore caricamento province.</div>;
@@ -86,13 +79,10 @@ function ProvinceList({ regionId, selected, onSelect }: { regionId: number; sele
 
   return (
     <ul className="pl-4 space-y-1 italic">
-      {provinces.map(prov => (
-        <li key={prov.id}>
-          <button
-            className={`${selected === prov.id ? 'text-blue-600' : ''}`}
-            onClick={() => onSelect(prov.id)}
-          >
-            {prov.name}
+      {provinces.map(p => (
+        <li key={p.id}>
+          <button className={`${selected === p.id ? 'text-blue-600' : ''}`} onClick={() => onSelect(p.id)}>
+            {p.name}
           </button>
         </li>
       ))}
@@ -100,27 +90,25 @@ function ProvinceList({ regionId, selected, onSelect }: { regionId: number; sele
   );
 }
 
-// Breadcrumb snippet provincia
 function ProvinceCrumb({ regionId, provinceId }: { regionId: number; provinceId: number }) {
   const { data: provinces } = useSWR<Province[]>(`/api/regions/${regionId}/provinces`, fetcher);
   const prov = provinces?.find(p => p.id === provinceId);
   return prov ? <span className="font-semibold text-blue-600">{prov.name}</span> : null;
 }
 
-// Lista post con toggle commenti inline
 function PostList({ provinceId }: { provinceId: number }) {
   const key = `/api/provinces/${provinceId}/posts?limit=5`;
   const { data: posts, error } = useSWR<Post[]>(key, fetcher);
-  const [isCreating, setCreating] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [newText, setNewText] = useState('');
   const [expanded, setExpanded] = useState<number[]>([]);
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   if (error) return <div>Errore caricamento post.</div>;
   if (!posts) return <div>Caricamento post...</div>;
 
   const toggle = (id: number) => {
-    setExpanded(exp => exp.includes(id) ? exp.filter(x => x !== id) : [...exp, id]);
+    setExpanded(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
   const createPost = async () => {
@@ -131,7 +119,7 @@ function PostList({ provinceId }: { provinceId: number }) {
       .from('posts')
       .insert({ province_id: provinceId, content: newText, author: user.id });
     if (error) console.error('Errore creazione post:', error);
-    else { setNewText(''); setCreating(false); mutate(key); }
+    else { setNewText(''); setIsCreating(false); mutate(key); }
   };
 
   return (
@@ -144,11 +132,11 @@ function PostList({ provinceId }: { provinceId: number }) {
             placeholder="Scrivi un nuovo annuncio…"
             value={newText}
             onChange={e => setNewText(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') createPost(); if (e.key === 'Escape') { setCreating(false); setNewText(''); } }}
-            onBlur={() => setCreating(false)}
+            onKeyDown={e => { if (e.key==='Enter') createPost(); if (e.key==='Escape') { setIsCreating(false); setNewText(''); } }}
+            onBlur={() => setIsCreating(false)}
           />
         ) : (
-          <button className="text-green-600 hover:underline text-sm" onClick={() => setCreating(true)}>
+          <button className="text-green-600 hover:underline text-sm" onClick={() => setIsCreating(true)}>
             + Scrivi un annuncio
           </button>
         )}
@@ -166,7 +154,6 @@ function PostList({ provinceId }: { provinceId: number }) {
   );
 }
 
-// Lista commenti inline (placeholder)
 function CommentList({ postId, postAuthorId }: { postId: number; postAuthorId: string }) {
   const { data: comments, error } = useSWR<Comment[]>(`/api/posts/${postId}/comments?limit=5`, fetcher);
   const { data: { user } = {} } = useSWR(() => supabase.auth.getUser(), fetcher);
