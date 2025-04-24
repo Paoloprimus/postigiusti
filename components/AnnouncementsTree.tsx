@@ -81,93 +81,102 @@ function ProvinceCrumb({ regionId, provinceId }: { regionId:number; provinceId:n
 function PostList({ provinceId }: { provinceId: number }) {
   const key = `/api/provinces/${provinceId}/posts?limit=5`;
   const { data: posts, error } = useSWR<Post[]>(key, fetcher);
-  const [creating, setCreating] = useState(false);
-  const [text, setText]         = useState('');
+  const [nickMap, setNickMap] = useState<Record<string,string>>({});
+  const [isCreating, setIsCreating] = useState(false);
+  const [newText, setNewText] = useState('');
   const [expanded, setExpanded] = useState<number[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 1) focus box scrittura
-  useEffect(()=>{ if(creating) inputRef.current?.focus() }, [creating]);
+  // Appena arrivano i post, prendi tutti i profili degli autori
+  useEffect(() => {
+    if (!posts || posts.length === 0) return;
+    const ids = Array.from(new Set(posts.map(p => p.author)));
+    supabase
+      .from('profiles')
+      .select('id,nickname')
+      .in('id', ids)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Errore fetch profili:', error);
+          return;
+        }
+        const m: Record<string,string> = {};
+        data!.forEach(p => { m[p.id] = p.nickname; });
+        setNickMap(m);
+      });
+  }, [posts]);
 
-  if (error) return <div>Errore caricamento post</div>;
+  // Focus sull’input quando creo
+  useEffect(() => {
+    if (isCreating) inputRef.current?.focus();
+  }, [isCreating]);
+
+  if (error) return <div>Errore caricamento post.</div>;
   if (!posts) return <div>Caricamento post…</div>;
 
-  // 2) toggle comment thread
-  const toggle = (id:number) => {
-    setExpanded(x => x.includes(id) ? x.filter(a=>a!==id) : [...x,id]);
+  const toggle = (id: number) => {
+    setExpanded(prev => prev.includes(id)
+      ? prev.filter(x => x !== id)
+      : [...prev, id]
+    );
   };
 
-  // 3) crea post
   const createPost = async () => {
-    if (!text.trim()) return;
+    if (!newText.trim()) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { error } = await supabase
       .from('posts')
-      .insert({ province_id: provinceId, content: text, author: user.id });
+      .insert({ province_id: provinceId, content: newText, author: user.id });
     if (error) console.error(error);
     else {
-      setText(''); setCreating(false); mutate(key);
+      setNewText('');
+      setIsCreating(false);
+      mutate(key);
     }
   };
 
   return (
     <ul className="pl-8 space-y-2">
       <li>
-        {creating
-          ? <input
-              ref={inputRef}
-              className="w-full p-1 border rounded"
-              placeholder="Scrivi un annuncio…"
-              value={text} onChange={e=>setText(e.target.value)}
-              onKeyDown={e=> {
-                if(e.key==='Enter') createPost();
-                if(e.key==='Escape') { setCreating(false); setText(''); }
-              }}
-              onBlur={()=>setCreating(false)}
-            />
-          : <button className="text-green-600 hover:underline text-sm" onClick={()=>setCreating(true)}>
-              + Scrivi un annuncio
-            </button>
-        }
+        {isCreating ? (
+          <input
+            ref={inputRef}
+            className="w-full p-1 border rounded"
+            placeholder="Scrivi un annuncio…"
+            value={newText}
+            onChange={e => setNewText(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') createPost();
+              if (e.key === 'Escape') { setIsCreating(false); setNewText(''); }
+            }}
+            onBlur={() => setIsCreating(false)}
+          />
+        ) : (
+          <button
+            className="text-green-600 hover:underline text-sm"
+            onClick={() => setIsCreating(true)}
+          >
+            + Scrivi un annuncio
+          </button>
+        )}
       </li>
 
-      {posts.map(p=>(
+      {posts.map(p => (
         <li key={p.id}>
-          <div onClick={()=>toggle(p.id)} className="underline cursor-pointer">
-            {p.content}
-            <small className="ml-2">[{p.author}]</small>
+          <div onClick={() => toggle(p.id)} className="underline cursor-pointer">
+            {p.content}{' '}
+            <small>[{nickMap[p.author] ?? p.author}]</small>
           </div>
-          {expanded.includes(p.id) && <CommentList postId={p.id} postAuthorId={p.author} />}
-        </li>
-      ))}
-
-      {posts.length===0 && !creating && (
-        <li className="italic text-gray-500">Ancora nessun annuncio</li>
-      )}
-    </ul>
-  );
-}
-
-function CommentList({ postId, postAuthorId }: { postId:number; postAuthorId:string }) {
-  const { data: comments, error } = useSWR<Comment[]>(`/api/posts/${postId}/comments?limit=5`, fetcher);
-  const { data: { user } = {} } = useSWR(() => supabase.auth.getUser(), fetcher);
-  const me = user?.id;
-
-  if (error) return <div>Errore caricamento commenti</div>;
-  if (!comments) return <div>Caricamento commenti…</div>;
-
-  return (
-    <ul className="pl-12 space-y-1">
-      {comments.map(c=>(
-        <li key={c.id} className="flex items-center">
-          <span className="text-sm">{c.content}</span>
-          <small className="ml-2">[{c.author}]</small>
-          {me===postAuthorId && (
-            <button className="ml-2 text-blue-500 text-xs">Rispondi</button>
+          {expanded.includes(p.id) && (
+            <CommentList postId={p.id} postAuthorId={p.author} />
           )}
         </li>
       ))}
+
+      {posts.length === 0 && !isCreating && (
+        <li className="italic text-gray-500">Ancora nessun annuncio</li>
+      )}
     </ul>
   );
 }
