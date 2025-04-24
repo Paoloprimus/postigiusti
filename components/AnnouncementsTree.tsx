@@ -5,10 +5,10 @@ import { fetcher } from '../lib/fetcher';
 import { supabase } from '../lib/supabase';
 
 // Tipi dati
-type Region = { id: number; name: string };
-type Province = { id: number; name: string };
-type Post = { id: number; content: string; author: string; created_at: string; province_id: number };
-type Comment = { id: number; content: string; author: string; created_at: string };
+export type Region = { id: number; name: string };
+export type Province = { id: number; name: string };
+export type Post = { id: number; content: string; author: string; created_at: string; province_id: number };
+export type Comment = { id: number; content: string; author: string; created_at: string };
 
 export default function AnnouncementsTree() {
   const { data: regions, error: regionsError } = useSWR<Region[]>('/api/regions', fetcher);
@@ -45,17 +45,9 @@ export default function AnnouncementsTree() {
 
       {/* Vista dinamica */}
       {!selectedRegion ? (
-        <RegionList
-          regions={regions}
-          selected={selectedRegion}
-          onSelect={setSelectedRegion}
-        />
+        <RegionList regions={regions} selected={selectedRegion} onSelect={setSelectedRegion} />
       ) : selectedProvince === null ? (
-        <ProvinceList
-          regionId={selectedRegion}
-          selected={selectedProvince}
-          onSelect={setSelectedProvince}
-        />
+        <ProvinceList regionId={selectedRegion} selected={selectedProvince} onSelect={setSelectedProvince} />
       ) : (
         <PostList provinceId={selectedProvince!} />
       )}
@@ -113,49 +105,21 @@ function PostList({ provinceId }: { provinceId: number }) {
   const [isCreating, setIsCreating] = useState(false);
   const [newText, setNewText] = useState('');
   const [expanded, setExpanded] = useState<number[]>([]);
-  const [nicknames, setNicknames] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch nicknames once posts load
-  useEffect(() => {
-    if (!posts) return;
-    const authors = Array.from(new Set(posts.map(p => p.author)));
-    if (authors.length) {
-      supabase
-        .from('profiles')
-        .select('id,nickname')
-        .in('id', authors)
-        .then(({ data, error }) => {
-          if (data) {
-            const map: Record<string, string> = {};
-            data.forEach(d => { map[d.id] = d.nickname; });
-            setNicknames(map);
-          }
-          if (error) console.error('Error fetching nicknames:', error);
-        });
-    }
-  }, [posts]);
-
+  useEffect(() => { if (isCreating) inputRef.current?.focus(); }, [isCreating]);
   if (error) return <div>Errore caricamento post.</div>;
   if (!posts) return <div>Caricamento post...</div>;
 
-  const toggle = (id: number) => {
-    setExpanded(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  };
+  const toggle = (id: number) => setExpanded(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   const createPost = async () => {
     if (!newText.trim()) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { error } = await supabase
-      .from('posts')
-      .insert({ province_id: provinceId, content: newText, author: user.id });
+    const { error } = await supabase.from('posts').insert({ province_id: provinceId, content: newText, author: user.id });
     if (error) console.error('Errore creazione post:', error);
-    else {
-      setNewText('');
-      setIsCreating(false);
-      mutate(key);
-    }
+    else { setNewText(''); setIsCreating(false); mutate(key); }
   };
 
   return (
@@ -181,7 +145,7 @@ function PostList({ provinceId }: { provinceId: number }) {
       {posts.map(post => (
         <li key={post.id} className="space-y-1">
           <div onClick={() => toggle(post.id)} className="underline cursor-pointer">
-            {post.content} <small>[{nicknames[post.author] || post.author}]</small>
+            {post.content} <small>[{post.author}]</small>
           </div>
           {expanded.includes(post.id) && <CommentList postId={post.id} postAuthorId={post.author} />}
         </li>
@@ -204,7 +168,7 @@ function CommentList({ postId, postAuthorId }: { postId: number; postAuthorId: s
       {comments.map(c => (
         <li key={c.id} className="flex items-center">
           <span className="text-sm">{c.content}</span>
-          <small className="ml-2">[{nicknames[c.author] || c.author}]</small>
+          <small className="ml-2">[{c.author}]</small>
           {userId === postAuthorId && <button className="ml-2 text-blue-500 text-xs">Rispondi</button>}
         </li>
       ))}
