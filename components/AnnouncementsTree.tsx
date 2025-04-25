@@ -149,10 +149,10 @@ function PostList({ provinceId }: { provinceId: number }) {
     <ul className="pl-8 space-y-2">
       <li className="space-x-4">
         <button className="text-blue-600 hover:underline text-sm" onClick={() => setCreatingType('offro')}>
-          + OFFRO (blu)
+          + OFFRO
         </button>
         <button className="text-orange-500 hover:underline text-sm" onClick={() => setCreatingType('cerco')}>
-          + CERCO (arancione)
+          + CERCO
         </button>
       </li>
       {creatingType && (
