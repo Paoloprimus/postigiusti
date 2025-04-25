@@ -7,17 +7,13 @@ import { supabase } from '../lib/supabase';
 // Tipi dati
 export type Region = { id: number; name: string };
 export type Province = { id: number; name: string };
-export type Post = { 
-  id: number; 
-  content: string; 
-  author: string; 
-  created_at: string; 
+export type Post = {
+  id: number;
+  content: string;
+  author: string;
+  created_at: string;
   province_id: number;
   type: 'cerco' | 'offro';
-  profiles: { 
-    nickname?: string; 
-    email: string; 
-  };
 };
 export type Comment = { id: number; content: string; author: string; created_at: string };
 
@@ -113,34 +109,55 @@ function ProvinceCrumb({ regionId, provinceId }: { regionId: number; provinceId:
 function PostList({ provinceId }: { provinceId: number }) {
   const key = `/api/provinces/${provinceId}/posts?limit=5`;
   const { data: posts, error } = useSWR<Post[]>(key, fetcher);
-  const [creatingType, setCreatingType] = useState<'cerco' | 'offro' | null>(null);
+  const [isCreating, setIsCreating] = useState<null | 'offro' | 'cerco'>(null);
   const [newText, setNewText] = useState('');
   const [expanded, setExpanded] = useState<number[]>([]);
+  const [emailMap, setEmailMap] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (creatingType && inputRef.current) inputRef.current.focus();
-  }, [creatingType]);
+    if (!posts || posts.length === 0) return;
+    const ids = Array.from(new Set(
+      posts.map(p => p.author).filter(id => /^[0-9a-f-]{36}$/.test(id))
+    ));
+    if (ids.length === 0) return;
+    supabase
+      .from('profiles')
+      .select('id,email')
+      .in('id', ids)
+      .then(({ data, error }) => {
+        if (error) return console.error('Errore fetch profili:', error);
+        const map: Record<string, string> = {};
+        data?.forEach(p => { map[p.id] = p.email });
+        setEmailMap(map);
+      });
+  }, [posts]);
+
+  useEffect(() => {
+    if (isCreating) inputRef.current?.focus();
+  }, [isCreating]);
+
+  const toggle = (id: number) => setExpanded(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   const createPost = async () => {
-    if (!newText.trim() || !creatingType) return;
+    if (!newText.trim() || !isCreating) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { error } = await supabase.from('posts').insert({
       province_id: provinceId,
       content: newText,
       author: user.id,
-      type: creatingType
+      type: isCreating,
     });
     if (error) console.error('Errore creazione post:', error);
-    else { 
+    else {
       setNewText('');
-      setCreatingType(null);
-      mutate(key); 
+      setIsCreating(null);
+      mutate(key);
     }
   };
 
-  const getColor = (type: string) => (type === 'cerco' ? 'text-orange-500' : 'text-blue-500');
+  const getColor = (type: string) => type === 'cerco' ? 'text-orange-500' : 'text-blue-500';
 
   if (error) return <div>Errore caricamento post.</div>;
   if (!posts) return <div>Caricamento post...</div>;
@@ -148,46 +165,43 @@ function PostList({ provinceId }: { provinceId: number }) {
   return (
     <ul className="pl-8 space-y-2">
       <li className="space-x-4">
-        <button className="text-blue-600 hover:underline text-sm" onClick={() => setCreatingType('offro')}>
+        <button className="text-blue-600 hover:underline text-sm" onClick={() => setIsCreating('offro')}>
           + OFFRO
         </button>
-        <button className="text-orange-500 hover:underline text-sm" onClick={() => setCreatingType('cerco')}>
+        <button className="text-orange-500 hover:underline text-sm" onClick={() => setIsCreating('cerco')}>
           + CERCO
         </button>
       </li>
-      {creatingType && (
+      {isCreating && (
         <li>
           <input
             ref={inputRef}
             className="w-full p-1 border rounded"
-            placeholder={`Scrivi un nuovo annuncio "${creatingType.toUpperCase()}"`}
+            placeholder={`Scrivi un nuovo annuncio "${isCreating.toUpperCase()}"`}
             value={newText}
             onChange={e => setNewText(e.target.value)}
-            onKeyDown={e => { 
-              if (e.key === 'Enter') createPost(); 
-              if (e.key === 'Escape') { setCreatingType(null); setNewText(''); } 
+            onKeyDown={e => {
+              if (e.key === 'Enter') createPost();
+              if (e.key === 'Escape') { setIsCreating(null); setNewText(''); }
             }}
-            onBlur={() => setCreatingType(null)}
+            onBlur={() => setIsCreating(null)}
           />
         </li>
       )}
       {posts.map(post => (
         <li key={post.id}>
           <div
-            className={`${getColor(post.type)} underline cursor-pointer`}
-            onDoubleClick={() => setExpanded(exp => exp.includes(post.id) ? exp.filter(x => x !== post.id) : [...exp, post.id])}
+            className="underline cursor-pointer"
+            onDoubleClick={() => toggle(post.id)}
           >
-            {post.type === 'offro' ? 'OFFRO: ' : 'CERCO: '}
-            {post.content} 
-            <small>
-              [{post.profiles?.nickname ?? post.profiles?.email ?? post.author}]
-            </small>
-
+            <span className={getColor(post.type)}>{post.type.toUpperCase()}:</span>{' '}
+            <span className="text-black">{post.content}</span>{' '}
+            <small className="text-gray-500">[{emailMap[post.author] || post.author}]</small>
           </div>
           {expanded.includes(post.id) && <CommentList postId={post.id} postAuthorId={post.author} colorClass={getColor(post.type)} />}
         </li>
       ))}
-      {posts.length === 0 && !creatingType && <li className="italic text-gray-500">Ancora nessun annuncio</li>}
+      {posts.length === 0 && !isCreating && <li className="italic text-gray-500">Ancora nessun annuncio</li>}
     </ul>
   );
 }
@@ -204,12 +218,11 @@ function CommentList({ postId, postAuthorId, colorClass }: { postId: number; pos
     <ul className="pl-12 space-y-1">
       {comments.map(c => (
         <li key={c.id} className="flex items-center">
-          <span className={`text-sm ${colorClass}`}>{c.content}</span>
-          <small className="ml-2">[{c.author}]</small>
+          <span className="text-sm text-black">{c.content}</span>
+          <small className="ml-2 text-gray-500">[{c.author}]</small>
           {userId === postAuthorId && <button className="ml-2 text-blue-500 text-xs">Rispondi</button>}
         </li>
       ))}
     </ul>
   );
 }
-
