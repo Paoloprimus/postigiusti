@@ -8,7 +8,20 @@ import { supabase } from '../lib/supabase';
 export type Region = { id: number; name: string };
 export type Province = { id: number; name: string };
 export type Post = { id: number; content: string; author: string; created_at: string; province_id: number; type: 'cerco' | 'offro'; profiles: { nickname?: string; email: string; }; };
-export type Comment = { id: number; content: string; author: string; created_at: string };
+export type Comment = {
+  id: number;
+  content: string;
+  author: string;
+  created_at: string;
+};
+export type CommentWithAuthor = Comment & {
+  profiles: {
+    nickname?: string;
+    email: string;
+  };
+};
+
+
 
 export default function AnnouncementsTree() {
   const { data: regions, error: regionsError } = useSWR<Region[]>('/api/regions', fetcher);
@@ -175,7 +188,7 @@ function PostList({ provinceId }: { provinceId: number }) {
 }
 
 function CommentList({ postId, postAuthorId, colorClass }: { postId: number; postAuthorId: string; colorClass: string }) {
-  const { data: comments, error } = useSWR<Comment[]>(`/api/posts/${postId}/comments?limit=5`, fetcher);
+  const { data: comments, error } = useSWR<CommentWithAuthor[]>(`/api/posts/${postId}/comments?limit=5`, fetcher);
   const { data: { user } = {} } = useSWR(() => supabase.auth.getUser(), fetcher);
   const userId = user?.id;
 
@@ -187,13 +200,16 @@ function CommentList({ postId, postAuthorId, colorClass }: { postId: number; pos
       {comments.map(c => (
         <li key={c.id} className="flex items-center">
           <span className={`text-sm ${colorClass}`}>{c.content}</span>
-          <small className="ml-2 text-gray-500">[{c.author}]</small>
+          <small className="ml-2 text-gray-500">
+            [{c.profiles?.nickname ?? c.profiles?.email ?? c.author}]
+          </small>
           {userId === postAuthorId && <button className="ml-2 text-blue-500 text-xs">Rispondi</button>}
         </li>
       ))}
     </ul>
   );
 }
+
 
 function NewCommentInput({ postId, onSubmit, onCancel }: { postId: number; onSubmit: (postId: number, content: string) => void; onCancel: () => void }) {
   const [text, setText] = useState('');
