@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 // Tipi dati
 export type Region = { id: number; name: string };
 export type Province = { id: number; name: string };
-export type Post = { id: number; content: string; author: string; created_at: string; province_id: number };
+export type Post = { id: number; content: string; author: string; created_at: string; province_id: number; type: 'cerco' | 'offro' };
 export type Comment = { id: number; content: string; author: string; created_at: string };
 
 export default function AnnouncementsTree() {
