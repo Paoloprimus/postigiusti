@@ -179,7 +179,10 @@ function PostList({ provinceId }: { provinceId: number }) {
           >
             {post.type === 'offro' ? 'OFFRO: ' : 'CERCO: '}
             {post.content} 
-            <small> [{post.profiles.nickname || post.profiles.email}]</small>
+            <small>
+              [{post.profiles?.nickname ?? post.profiles?.email ?? post.author}]
+            </small>
+
           </div>
           {expanded.includes(post.id) && <CommentList postId={post.id} postAuthorId={post.author} colorClass={getColor(post.type)} />}
         </li>
