@@ -30,14 +30,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // ------------------------------------------------ POST nuovo commento
     case 'POST': {
-      const { content } = req.body as { content: string };
 
-      // auth utente
-      const {
-        data: { user },
-        error: authErr,
-      } = await supabase.auth.getUser();
 
+   // 1. prendi il token dall'header "Authorization: Bearer <jwt>"
+   const token = req.headers.authorization?.split(' ')[1];
+   if (!token) return res.status(401).json({ error: 'Non autenticato' });
+ 
+   // 2. ottieni l'utente dal JWT
+   const {
+     data: { user },
+     error: authErr,
+   } = await supabase.auth.getUser(token);
+
+
+      
       if (authErr || !user)
         return res.status(401).json({ error: 'Non autenticato' });
       if (!content?.trim())
