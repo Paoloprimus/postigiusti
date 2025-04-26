@@ -344,6 +344,8 @@ function CommentList({
   if (error) return <div>Errore caricamento commenti.</div>;
   if (!comments) return <div>Caricamento commenti...</div>;
 
+  console.log('COMMENTS:', comments);  // ⬅️ AGGIUNGI QUESTO
+  
   return (
     <ul className="pl-12 space-y-1">
       {comments.map((c) => (
