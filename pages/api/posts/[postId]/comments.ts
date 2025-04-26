@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .from('comments')
         .select(`
           id, content, created_at,
-          author:profiles!comments_author_fkey(id, nickname, avatar_url)
+          author:profiles!comments_author_profiles_fk(id,nickname,avatar_url)
         `)
         .eq('post_id', postId)
         .order('created_at');
