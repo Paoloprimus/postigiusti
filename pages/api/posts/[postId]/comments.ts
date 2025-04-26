@@ -11,6 +11,7 @@ const supabase = createClient(
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { postId } = req.query as { postId: string };
+  const postIdNumber = Number(postId);  // ← AGGIUNTA
 
   switch (req.method) {
     // ------------------------------------------------ GET commenti
@@ -21,8 +22,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           id, content, created_at,
           author:profiles!comments_author_profiles_fk(id,nickname,email)
         `)
-        .eq('post_id', postId)
-        .order('created_at');
+       // .eq('post_id', postId)
+        .eq('post_id', postIdNumber)
+        .order('created_at', ascending: false);
 
       if (error) return res.status(500).json({ error: error.message });
       return res.status(200).json(data);
