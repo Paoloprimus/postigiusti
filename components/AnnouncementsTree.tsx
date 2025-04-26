@@ -206,28 +206,40 @@ function PostList({ provinceId }: { provinceId: number }) {
     }
   };
 
-  // ——— AGGIORNATO: usa l’endpoint API invece di inserire diretto su Supabase
-  const createComment = async (postId: number, content: string) => {
-    if (!content.trim()) return;
-    try {
-      const res = await fetch(`/api/posts/${postId}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
-      });
-      if (!res.ok) {
-        const msg = await res.text();
-        console.error('Errore creazione commento:', msg);
-      } else {
-        setCommenting(null);
-        // ricarica lista commenti per quel post
-        mutate(`/api/posts/${postId}/comments?limit=5`);
-      }
-    } catch (err) {
-      console.error('Errore network commento:', err);
+// ——— AGGIORNATO: usa l’endpoint API e passa il JWT dell’utente
+const createComment = async (postId: number, content: string) => {
+  if (!content.trim()) return;
+
+  try {
+    // recupera il token dell’utente loggato
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    const res = await fetch(`/api/posts/${postId}/comments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ content }),
+    });
+
+    if (!res.ok) {
+      const msg = await res.text();
+      console.error('Errore creazione commento:', msg);
+    } else {
+      setCommenting(null);
+      // ricarica la lista commenti di quel post
+      mutate(`/api/posts/${postId}/comments?limit=5`);
     }
-  };
-  // ————————————————————————————————————————————————————————————————
+  } catch (err) {
+    console.error('Errore network commento:', err);
+  }
+};
+// ————————————————————————————————————————————————————————————————
+
 
   const getColor = (type: string) =>
     type === 'cerco' ? 'text-orange-500' : 'text-blue-500';
