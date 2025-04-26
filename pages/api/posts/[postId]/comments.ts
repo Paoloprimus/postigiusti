@@ -5,7 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 // Client “server-side” per poter fare join su profiles
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!   // chiave service-role – resta solo sul backend
+  // se manca la service-role usa l'anon key
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
