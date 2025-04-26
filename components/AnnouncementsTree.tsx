@@ -334,7 +334,7 @@ function CommentList({
   colorClass: string;
 }) {
   const { data: comments, error } = useSWR<CommentWithAuthor[]>(
-    `/api/posts/${postId}/comments?limit=5`,
+    `/api/posts/${postId}/comments`,
     fetcher
   );
   // lettura user corrente
