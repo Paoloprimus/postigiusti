@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'provinceId is not a number' });
   }
 
-  // Branch GET aggiornato
+  // Branch GET aggiornato usando la vista posts_with_authors
   if (req.method === 'GET') {
     try {
       const limit = typeof req.query.limit === 'string'
@@ -21,30 +21,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         : undefined;
 
       let query = supabase
-        .from('posts')
-        .select(`
-          id,
-          content,
-          created_at,
-          province_id,
-          type,
-          author,
-          profiles:profiles!posts_author_fkey (
-            id,
-            nickname,
-            email
-          ),
-          comments (
-            id,
-            content,
-            created_at,
-            author,
-            profiles:profiles!comments_author_profiles_fk (
-              id,
-              nickname
-            )
-          )
-        `)
+        .from('posts_with_authors')
+        .select('*')
         .eq('province_id', pid)
         .order('created_at', { ascending: false });
 
@@ -91,8 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         author,
         created_at,
         province_id,
-        type,
-        profiles:profiles!posts_author_fkey(nickname, email)
+        type
       `);
 
     if (error) {
