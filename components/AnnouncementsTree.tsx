@@ -374,31 +374,36 @@ function CommentList({
   const [replyText, setReplyText] = useState('');
 
   const submitReply = async (commentId: number) => {
-    if (!replyText.trim()) return;
+  if (!replyText.trim()) return;
 
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const token = session?.access_token;
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
 
-      const res = await fetch(`/api/comments/${commentId}/replies`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ content: replyText }),
-      });
+    if (!token) {
+      console.error('Nessun token disponibile: utente non loggato.');
+      return;
+    }
 
-      if (!res.ok) {
-        const msg = await res.text();
-        console.error('Errore salvataggio risposta:', msg);
-      } else {
-        setReplying(null);
-        setReplyText('');
-        mutate(`/api/posts/${postId}/comments`); // Ricarica commenti (e poi vedremo anche risposte)
-      }
+    const res = await fetch(`/api/comments/${commentId}/replies`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ content: replyText }),
+    });
+
+    if (!res.ok) {
+      const msg = await res.text();
+      console.error('Errore salvataggio risposta:', msg);
+    } else {
+      setReplying(null);
+      setReplyText('');
+      mutate(`/api/posts/${postId}/comments`);
+    }
     } catch (err) {
       console.error('Errore network risposta:', err);
     }
