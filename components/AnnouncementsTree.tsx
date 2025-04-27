@@ -22,10 +22,13 @@ export type Comment = {
   author: string;
   created_at: string;
 };
-export type CommentWithAuthor = Comment & {
+export type CommentWithAuthor = {
+  id: number;
+  content: string;
+  created_at: string;
   profiles: {
     nickname?: string;
-    email: string;
+    email?: string;
   };
 };
 
