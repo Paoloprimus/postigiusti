@@ -308,7 +308,7 @@ const createComment = async (postId: number, content: string) => {
           {post.type === 'offro' ? 'OFFRO: ' : 'CERCO: '}
           <span className="text-black">{post.content}</span>
           <small className="ml-2 text-gray-500">
-            [{c.nickname}]
+            [{post.nickname ?? post.email}]
           </small>
           
         </div>
