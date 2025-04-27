@@ -21,12 +21,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .from('comments')
         .select(`
           id, content, created_at,
-          profiles ( nickname, email )
+          author,
+          profiles (
+            id,
+            nickname,
+            email
+          )
         `)
-
         
-        .eq('post_id', postIdNumber)
-        .order('created_at', { ascending: false });
+      .eq('post_id', postIdNumber)
+      .order('created_at', { ascending: false });
 
        console.log('DATA RICEVUTI DA SUPABASE:', data);  // 👈 AGGIUNGI QUI
 
