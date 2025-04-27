@@ -308,8 +308,9 @@ const createComment = async (postId: number, content: string) => {
           {post.type === 'offro' ? 'OFFRO: ' : 'CERCO: '}
           <span className="text-black">{post.content}</span>
           <small className="ml-2 text-gray-500">
-            [{post.profiles?.nickname ?? post.profiles?.email}]
+            [{c.nickname}]
           </small>
+          
         </div>
 
           {expanded.includes(post.id) && (
