@@ -21,8 +21,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .from('comments')
         .select(`
           id, content, created_at,
-          author
+          profiles ( nickname, email )
         `)
+
+        
         .eq('post_id', postIdNumber)
         .order('created_at', { ascending: false });
 
