@@ -189,21 +189,21 @@ const clickTimers = useRef<{ [key: number]: NodeJS.Timeout }>({});
 
 const handleClick = (postId: number) => {
   if (clickTimers.current[postId]) {
-    // Secondo click veloce = doppio click
     clearTimeout(clickTimers.current[postId]);
     delete clickTimers.current[postId];
-    setCommenting(postId);         // apre input commento
+    setCommenting(postId);  // doppio click ➔ scrivi commento
   } else {
-    // Primo click
     clickTimers.current[postId] = setTimeout(() => {
-      setExpanded(prev => 
-        prev.includes(postId) ? prev.filter(x => x !== postId) : [...prev, postId]
-      );                           // apre o chiude commenti
+      setExpanded(prev =>
+        prev.includes(postId)
+          ? prev.filter(x => x !== postId)
+          : [...prev, postId]
+      ); // singolo click ➔ apre commenti
       delete clickTimers.current[postId];
-    }, 300); // 300ms di attesa
+    }, 300);
   }
 };
-  
+
   useEffect(() => {
     if (creatingType && inputRef.current) inputRef.current.focus();
   }, [creatingType]);
@@ -307,18 +307,17 @@ const createComment = async (postId: number, content: string) => {
       {posts.map((post) => (
         <li key={post.id}>
 
-          <div
-            className={`${getColor(post.type)} underline cursor-pointer`}
-            onClick={() => setExpanded(prev => prev.includes(post.id) ? prev.filter(x => x !== post.id) : [...prev, post.id])}
-            onDoubleClick={() => setCommenting(post.id)}
-          >
+        <div
+          className={`${getColor(post.type)} cursor-pointer`} // tolto underline
+          onClick={() => handleClick(post.id)}
+        >
+          {post.type === 'offro' ? 'OFFRO: ' : 'CERCO: '}
+          <span className="text-black">{post.content}</span>
+          <small className="ml-2 text-gray-500">
+            [{post.profiles?.nickname ?? post.profiles?.email}]
+          </small>
+        </div>
 
-            {post.type === 'offro' ? 'OFFRO: ' : 'CERCO: '}
-            <span className="text-black">{post.content}</span>
-            <small className="text-gray-500 ml-2">
-              [{post.profiles?.nickname ?? post.profiles?.email ?? post.author}]
-            </small>
-          </div>
           {expanded.includes(post.id) && (
             <CommentList
               postId={post.id}
