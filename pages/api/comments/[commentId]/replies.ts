@@ -1,5 +1,6 @@
 // pages/api/comments/[commentId]/replies.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { supabase } from '../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -9,26 +10,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Metodo non consentito' });
   }
 
+  const supabaseServerClient = createServerSupabaseClient({ req, res });
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabaseServerClient.auth.getUser();
+
+  if (userError || !user) {
+    return res.status(401).json({ error: 'Utente non autenticato' });
+  }
+
   const { content } = req.body;
 
   if (!content || typeof content !== 'string') {
     return res.status(400).json({ error: 'Contenuto della risposta mancante o non valido.' });
   }
 
-  const { data: sessionData, error: sessionError } = await supabase.auth.getUser(
-    req.headers.authorization?.replace('Bearer ', '') || ''
-  );
-
-  if (sessionError || !sessionData?.user) {
-    return res.status(401).json({ error: 'Utente non autenticato' });
-  }
-
-  const userId = sessionData.user.id;
-
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('nickname')
-    .eq('id', userId)
+    .eq('id', user.id)
     .single();
 
   if (profileError || !profile) {
@@ -38,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { error: insertError } = await supabase.from('replies').insert({
     comment_id: Number(commentId),
     content,
-    author: userId,
+    author: user.id,
     nickname: profile.nickname,
   });
 
