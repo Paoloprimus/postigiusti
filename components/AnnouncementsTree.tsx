@@ -406,8 +406,10 @@ function CommentList({
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
+      credentials: 'include', // 👈 questa riga aggiunta
       body: JSON.stringify({ content: replyText }),
     });
+
 
     if (!res.ok) {
       const msg = await res.text();
