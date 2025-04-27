@@ -182,6 +182,25 @@ function PostList({ provinceId }: { provinceId: number }) {
   const [commenting, setCommenting] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+const clickTimers = useRef<{ [key: number]: NodeJS.Timeout }>({});
+
+const handleClick = (postId: number) => {
+  if (clickTimers.current[postId]) {
+    // Secondo click veloce = doppio click
+    clearTimeout(clickTimers.current[postId]);
+    delete clickTimers.current[postId];
+    setCommenting(postId);         // apre input commento
+  } else {
+    // Primo click
+    clickTimers.current[postId] = setTimeout(() => {
+      setExpanded(prev => 
+        prev.includes(postId) ? prev.filter(x => x !== postId) : [...prev, postId]
+      );                           // apre o chiude commenti
+      delete clickTimers.current[postId];
+    }, 300); // 300ms di attesa
+  }
+};
+  
   useEffect(() => {
     if (creatingType && inputRef.current) inputRef.current.focus();
   }, [creatingType]);
@@ -284,17 +303,13 @@ const createComment = async (postId: number, content: string) => {
       )}
       {posts.map((post) => (
         <li key={post.id}>
+
           <div
             className={`${getColor(post.type)} underline cursor-pointer`}
-            onClick={() =>
-              setExpanded((prev) =>
-                prev.includes(post.id)
-                  ? prev.filter((x) => x !== post.id)
-                  : [...prev, post.id]
-              )
-            }
+            onClick={() => setExpanded(prev => prev.includes(post.id) ? prev.filter(x => x !== post.id) : [...prev, post.id])}
             onDoubleClick={() => setCommenting(post.id)}
           >
+
             {post.type === 'offro' ? 'OFFRO: ' : 'CERCO: '}
             <span className="text-black">{post.content}</span>
             <small className="text-gray-500 ml-2">
