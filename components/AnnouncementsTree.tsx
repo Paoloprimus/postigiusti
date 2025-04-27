@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import useSWR, { mutate } from 'swr';
 import { fetcher } from '../lib/fetcher';
 import { supabase } from '../lib/supabase';
+import { timeAgo } from '../utils/timeAgo';
+
 
 // Tipi dati
 export type Region = { id: number; name: string };
@@ -310,7 +312,7 @@ const createComment = async (postId: number, content: string) => {
           {post.type === 'offro' ? 'OFFRO: ' : 'CERCO: '}
           <span className="text-black">{post.content}</span>
           <small className="ml-2 text-gray-500">
-            [{post.nickname ?? post.email}]
+            [{post.nickname ?? post.email}, {timeAgo(post.created_at)}]
           </small>
           
         </div>
@@ -367,7 +369,7 @@ function CommentList({
         <li key={c.id} className="flex items-center">
           <span className={`text-sm ${colorClass}`}>{c.content}</span>
           <small className="ml-2 text-gray-500">
-            [{c.nickname}]
+            [{c.nickname}, {timeAgo(c.created_at)}]
           </small>
           {userId === postAuthorId && (
             <button className="ml-2 text-blue-500 text-xs">Rispondi</button>
