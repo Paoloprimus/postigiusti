@@ -365,7 +365,7 @@ function CommentList({
         <li key={c.id} className="flex items-center">
           <span className={`text-sm ${colorClass}`}>{c.content}</span>
           <small className="ml-2 text-gray-500">
-            [{c.profiles?.nickname}]
+            [{c.nickname}]
           </small>
           {userId === postAuthorId && (
             <button className="ml-2 text-blue-500 text-xs">Rispondi</button>
