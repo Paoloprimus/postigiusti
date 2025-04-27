@@ -30,6 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           type,
           author,
           profiles:profiles!posts_author_fkey (
+            id,
             nickname,
             email
           ),
@@ -39,6 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             created_at,
             author,
             profiles:profiles!comments_author_profiles_fk (
+              id,
               nickname
             )
           )
