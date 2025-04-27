@@ -216,6 +216,19 @@ const handleClick = (postId: number) => {
     if (creatingType && inputRef.current) inputRef.current.focus();
   }, [creatingType]);
 
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Errore sessione Supabase:', error);
+      } else {
+        console.log('UTENTE LOGGATO:', user);
+      }
+    };
+    checkSession();
+  }, []);
+
+  
   const createPost = async () => {
     if (!newText.trim() || !creatingType) return;
     const {
