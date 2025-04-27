@@ -14,8 +14,10 @@ export type Post = {
   created_at: string;
   province_id: number;
   type: 'cerco' | 'offro';
-  profiles: { nickname?: string; email: string };
+  nickname?: string;  // 🔵 aggiunto qui
+  email?: string;     // 🔵 aggiunto qui
 };
+
 export type CommentWithAuthor = {
   id: number;
   content: string;
