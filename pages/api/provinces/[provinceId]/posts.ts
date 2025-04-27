@@ -25,12 +25,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .select(`
           id,
           content,
-          author,
           created_at,
           province_id,
           type,
-          profiles:profiles!posts_author_fkey(nickname, email)
+          author,
+          profiles (
+            id,
+            nickname,
+            email
+          )
         `)
+
         .eq('province_id', pid)
         .order('created_at', { ascending: false });
 
