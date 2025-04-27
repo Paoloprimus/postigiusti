@@ -20,13 +20,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data, error } = await supabase
         .from('comments')
         .select(`
-          id, content, created_at,
-          author,
-          profiles!comments_author_fkey (
-            id,
-            nickname,
-            email
-          )
+          id,
+          content,
+          created_at,
+          author
         `)
         .eq('post_id', postIdNumber)
         .order('created_at', { ascending: false });
