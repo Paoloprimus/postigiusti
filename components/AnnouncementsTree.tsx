@@ -269,7 +269,7 @@ const createComment = async (postId: number, content: string) => {
     <ul className="pl-8 space-y-2">
       <li className="space-x-4">
         <button
-          className="text-blue-600 hover:underline text-sm"
+          className="text-green-700 hover:underline text-sm"
           onClick={() => setCreatingType('offro')}
         >
           + OFFRO
