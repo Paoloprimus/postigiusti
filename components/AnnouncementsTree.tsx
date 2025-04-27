@@ -353,6 +353,10 @@ function CommentList({
     `/api/posts/${postId}/comments`,
     fetcher
   );
+  const { data: replies } = useSWR(
+    comments ? `/api/comments/replies?commentIds=${comments.map(c => c.id).join(',')}` : null,
+    fetcher
+  );
   console.log('COMMENTS:', comments);
   const { data: session } = useSWR('user', () => supabase.auth.getUser());
   const userId = session?.data?.user?.id;
@@ -398,7 +402,7 @@ function CommentList({
 
   return (
     <ul className="pl-12 space-y-1">
-      {comments.map((c) => (
+    {comments.map((c) => (
         <li key={c.id} className="flex flex-col">
           <div className="flex items-center">
             <span className={`text-sm ${colorClass}`}>{c.content}</span>
@@ -414,6 +418,7 @@ function CommentList({
               </button>
             )}
           </div>
+      
           {replying === c.id && (
             <input
               className="ml-14 mt-1 w-full p-1 border rounded text-sm"
@@ -430,8 +435,22 @@ function CommentList({
               autoFocus
             />
           )}
+      
+          {/* 👇 QUI SOTTO: VISUALIZZIAMO LE RISPOSTE */}
+          {replies &&
+            replies
+              .filter((r: any) => r.comment_id === c.id)
+              .map((r: any) => (
+                <div key={r.id} className="ml-20 mt-1 text-sm text-gray-700">
+                  {r.content}
+                  <small className="ml-2 text-gray-500">
+                    [{r.nickname}, {timeAgo(r.created_at)}]
+                  </small>
+                </div>
+              ))}
         </li>
       ))}
+
     </ul>
   );
 }
