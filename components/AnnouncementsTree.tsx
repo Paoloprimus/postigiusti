@@ -16,19 +16,12 @@ export type Post = {
   type: 'cerco' | 'offro';
   profiles: { nickname?: string; email: string };
 };
-export type Comment = {
-  id: number;
-  content: string;
-  author: string;
-  created_at: string;
-};
 export type CommentWithAuthor = {
   id: number;
   content: string;
   created_at: string;
   profiles: {
     nickname?: string;
-    email?: string;
   };
 };
 
