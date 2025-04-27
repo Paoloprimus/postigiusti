@@ -29,6 +29,15 @@ export type CommentWithAuthor = {
   nickname?: string;  // 🔵 nickname ora è diretto
 };
 
+export type Reply = {
+  id: number;
+  comment_id: number;
+  content: string;
+  author: string;
+  nickname?: string;
+  created_at: string;
+};
+
 
 export default function AnnouncementsTree() {
   const { data: regions, error: regionsError } = useSWR<Region[]>(
@@ -353,7 +362,7 @@ function CommentList({
     `/api/posts/${postId}/comments`,
     fetcher
   );
-  const { data: replies } = useSWR(
+  const { data: replies } = useSWR<Reply[]>(
     comments ? `/api/comments/replies?commentIds=${comments.map(c => c.id).join(',')}` : null,
     fetcher
   );
