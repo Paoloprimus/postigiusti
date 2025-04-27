@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'provinceId is not a number' });
   }
 
-  // Branch GET aggiornato con campo type
+  // Branch GET aggiornato
   if (req.method === 'GET') {
     try {
       const limit = typeof req.query.limit === 'string'
@@ -29,13 +29,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           province_id,
           type,
           author,
-          profiles (
-            id,
+          profiles:profiles!posts_author_fkey (
             nickname,
             email
+          ),
+          comments (
+            id,
+            content,
+            created_at,
+            author,
+            profiles:profiles!comments_author_profiles_fk (
+              nickname
+            )
           )
         `)
-
         .eq('province_id', pid)
         .order('created_at', { ascending: false });
 
@@ -53,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 
-  // Branch POST aggiornato con campo obbligatorio type
+  // Branch POST lasciato uguale
   if (req.method === 'POST') {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
