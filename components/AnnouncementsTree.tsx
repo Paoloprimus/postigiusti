@@ -378,15 +378,7 @@ function CommentList({
   );
 }
 
-function NewCommentInput({
-  postId,
-  onSubmit,
-  onCancel,
-}: {
-  postId: number;
-  onSubmit: (postId: number, content: string) => void;
-  onCancel: () => void;
-}) {
+function NewCommentInput({ postId, onSubmit, onCancel }: { postId: number; onSubmit: (postId: number, content: string) => void; onCancel: () => void }) {
   const [text, setText] = useState('');
 
   return (
@@ -395,16 +387,23 @@ function NewCommentInput({
         className="w-full p-1 border rounded"
         placeholder="Scrivi un commento..."
         value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => {
+        onChange={e => setText(e.target.value)}
+        onKeyDown={e => {
           if (e.key === 'Enter') {
             onSubmit(postId, text);
             setText('');
           }
-          if (e.key === 'Escape') onCancel();
+          if (e.key === 'Escape') {
+            setText('');
+            onCancel();
+          }
         }}
-        onBlur={onCancel}
+        onBlur={() => {
+          setText('');
+          onCancel();
+        }}
       />
     </div>
   );
 }
+
