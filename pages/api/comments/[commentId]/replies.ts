@@ -1,52 +1,33 @@
-// pages/api/comments/[commentId]/replies.ts
+// pages/api/comments/replies.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabase } from '../../../../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { commentId } = req.query;
-
-  if (req.method !== 'POST') {
+  if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Metodo non consentito' });
   }
 
-  // Recupera dati dalla richiesta
-  const { content } = req.body;
+  const { commentIds } = req.query;
 
-  if (!content || typeof content !== 'string') {
-    return res.status(400).json({ error: 'Contenuto della risposta mancante o non valido.' });
+  if (!commentIds || typeof commentIds !== 'string') {
+    return res.status(400).json({ error: 'Parametri non validi' });
   }
 
-  // Recupera il token utente (se disponibile)
-  const { data: sessionData, error: sessionError } = await supabase.auth.getUser(req.headers.authorization?.replace('Bearer ', '') || '');
+  const idsArray = commentIds.split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
 
-  if (sessionError || !sessionData?.user) {
-    return res.status(401).json({ error: 'Utente non autenticato' });
+  if (idsArray.length === 0) {
+    return res.status(400).json({ error: 'Nessun ID valido' });
   }
 
-  const userId = sessionData.user.id;
+  const { data, error } = await supabase
+    .from('replies')
+    .select('id, comment_id, content, author, nickname, created_at')
+    .in('comment_id', idsArray)
+    .order('created_at', { ascending: true });
 
-  // Recupera il nickname dell'utente loggato
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('nickname')
-    .eq('id', userId)
-    .single();
-
-  if (profileError || !profile) {
-    return res.status(500).json({ error: 'Errore nel recupero del profilo utente' });
+  if (error) {
+    return res.status(500).json({ error: 'Errore nel recupero delle risposte' });
   }
 
-  // Inserisce la risposta nella tabella replies
-  const { error: insertError } = await supabase.from('replies').insert({
-    comment_id: Number(commentId),
-    content,
-    author: userId,
-    nickname: profile.nickname,
-  });
-
-  if (insertError) {
-    return res.status(500).json({ error: 'Errore durante il salvataggio della risposta' });
-  }
-
-  return res.status(200).json({ message: 'Risposta salvata con successo' });
+  return res.status(200).json(data);
 }
