@@ -259,10 +259,9 @@ const createComment = async (postId: number, content: string) => {
 };
 // ————————————————————————————————————————————————————————————————
 
+  const getColor = (type: string) => (type === 'cerco' ? 'text-orange-500' : 'text-green-700');
 
-  const getColor = (type: string) =>
-    type === 'cerco' ? 'text-orange-500' : 'text-blue-500';
-
+  
   if (error) return <div>Errore caricamento post.</div>;
   if (!posts) return <div>Caricamento post...</div>;
 
