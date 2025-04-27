@@ -20,12 +20,13 @@ export type Post = {
 
 export type CommentWithAuthor = {
   id: number;
+  post_id: number;    // 🔵 aggiungiamo post_id che vediamo nei dati veri
   content: string;
   created_at: string;
-  profiles: {
-    nickname?: string;
-  };
+  author: string;     // 🔵 aggiungiamo anche author
+  nickname?: string;  // 🔵 nickname ora è diretto
 };
+
 
 export default function AnnouncementsTree() {
   const { data: regions, error: regionsError } = useSWR<Region[]>(
