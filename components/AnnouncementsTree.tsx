@@ -277,6 +277,7 @@ function PostList({ provinceId }: { provinceId: number }) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
+      console.log('TOKEN:', token); 
       if (!token) {
         console.error('Nessun token disponibile: utente non loggato.');
         return;
