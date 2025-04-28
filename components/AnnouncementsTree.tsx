@@ -4,7 +4,7 @@ import useSWR, { mutate } from 'swr';
 import { fetcher } from '../lib/fetcher';
 import { supabase } from '../lib/supabase';
 import { timeAgo } from '../utils/timeAgo';
-
+import { mutate } from 'swr';
 
 // Tipi dati
 export type Region = { id: number; name: string };
@@ -417,7 +417,8 @@ function CommentList({
     } else {
       setReplying(null);
       setReplyText('');
-      mutate(`/api/posts/${postId}/comments`);
+      mutate(`/api/posts/${postId}/comments`); // aggiorna commenti
+      mutate(`/api/comments/replies?commentIds=${commentId}`); // 🔥 AGGIUNGI QUESTA RIGA per aggiornare risposte
     }
     } catch (err) {
       console.error('Errore network risposta:', err);
