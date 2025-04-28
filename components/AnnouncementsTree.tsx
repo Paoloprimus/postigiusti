@@ -439,16 +439,15 @@ function CommentList({
               [{c.nickname}, {timeAgo(c.created_at)}]
             </small>
 
-            {userId === postAuthorId &&
-            (!replies?.some((r: Reply) => r.comment_id === c.id) && (
-              <button
-                className="ml-2 text-blue-500 text-xs"
-                onClick={() => setReplying(c.id)}
-              >
-                Rispondi
-              </button>
-            ))}
-      
+          {userId === postAuthorId && !replies?.some((r: Reply) => r.comment_id === c.id) && (
+            <button
+              className="ml-2 text-blue-500 text-xs"
+              onClick={() => setReplying(c.id)}
+            >
+              Rispondi
+            </button>
+          )}
+
           {replying === c.id && (
             <input
               className="ml-14 mt-1 w-full p-1 border rounded text-sm"
