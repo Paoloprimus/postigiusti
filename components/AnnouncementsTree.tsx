@@ -331,6 +331,7 @@ function PostList({ provinceId }: { provinceId: number }) {
         </li>
       )}
       {posts.map((post) => (
+      {console.log('Post:', post, 'UserId:', userId)}
         <li key={post.id}>
           <div className={`${getColor(post.type)} cursor-pointer`} onClick={() => handleClick(post.id)}>
             {post.type === 'offro' ? 'OFFRO: ' : 'CERCO: '}
