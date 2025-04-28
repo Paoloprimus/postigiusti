@@ -282,6 +282,7 @@ function PostList({ provinceId }: { provinceId: number }) {
         console.error('Nessun token disponibile: utente non loggato.');
         return;
       }
+      console.log('Chiamo fetch su:', `/api/posts/${postId}/close`);
       const res = await fetch(`/api/posts/${postId}/close`, {
         method: 'PATCH',
         headers: {
