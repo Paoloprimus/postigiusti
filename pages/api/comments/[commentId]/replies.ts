@@ -1,7 +1,10 @@
 // pages/api/comments/[commentId]/replies.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
-import { supabase } from '../../../../lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+// Recupera url e anon key da env
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { commentId } = req.query;
@@ -10,12 +13,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Metodo non consentito' });
   }
 
-  const supabaseServerClient = createServerSupabaseClient({ req, res });
+  const token = req.headers.authorization?.replace('Bearer ', '');
+
+  if (!token) {
+    return res.status(401).json({ error: 'Token mancante' });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  });
 
   const {
     data: { user },
     error: userError,
-  } = await supabaseServerClient.auth.getUser();
+  } = await supabase.auth.getUser();
 
   if (userError || !user) {
     return res.status(401).json({ error: 'Utente non autenticato' });
