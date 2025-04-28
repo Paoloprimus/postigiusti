@@ -330,45 +330,47 @@ function PostList({ provinceId }: { provinceId: number }) {
           />
         </li>
       )}
-    {posts.map((post) => {
-      console.log('Post:', post, 'UserId:', userId);
-      return (
-        <li key={post.id}>
-          <div className={`${getColor(post.type)} cursor-pointer`} onClick={() => handleClick(post.id)}>
-            {post.type === 'offro' ? 'OFFRO: ' : 'CERCO: '}
-            <span className="text-black">{post.content}</span>
-            <small className="ml-2 text-gray-500">
-              [{post.nickname ?? post.email}, {timeAgo(post.created_at)}]
-            </small>
-            {post.closed === false && userId === post.author && (
-              <button
-                className="ml-2 text-red-500 text-xs hover:underline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleClosePost(post.id);
-                }}
-              >
-                Barra
-              </button>
+      {posts.map((post) => {
+        console.log('Post:', post, 'UserId:', userId);
+        return (
+          <li key={post.id}>
+            <div className={`${getColor(post.type)} cursor-pointer`} onClick={() => handleClick(post.id)}>
+              {post.type === 'offro' ? 'OFFRO: ' : 'CERCO: '}
+              <span className="text-black">{post.content}</span>
+              <small className="ml-2 text-gray-500">
+                [{post.nickname ?? post.email}, {timeAgo(post.created_at)}]
+              </small>
+              {post.closed === false && userId === post.author && (
+                <button
+                  className="ml-2 text-red-500 text-xs hover:underline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClosePost(post.id);
+                  }}
+                >
+                  Barra
+                </button>
+              )}
+            </div>
+      
+            {expanded.includes(post.id) && (
+              <CommentList
+                postId={post.id}
+                postAuthorId={post.author}
+                colorClass="text-black"
+              />
             )}
-          </div>
+            {commenting === post.id && (
+              <NewCommentInput
+                postId={post.id}
+                onSubmit={createComment}
+                onCancel={() => setCommenting(null)}
+              />
+            )}
+          </li>
+        );
+      })}
 
-          {expanded.includes(post.id) && (
-            <CommentList
-              postId={post.id}
-              postAuthorId={post.author}
-              colorClass="text-black"
-            />
-          )}
-          {commenting === post.id && (
-            <NewCommentInput
-              postId={post.id}
-              onSubmit={createComment}
-              onCancel={() => setCommenting(null)}
-            />
-          )}
-        </li>
-      ))}
       {posts.length === 0 && !creatingType && (
         <li className="italic text-gray-500">Ancora nessun annuncio</li>
       )}
