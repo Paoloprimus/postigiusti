@@ -39,7 +39,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .from('posts')
     .update({ closed: true })
     .eq('id', Number(postId))
-    .eq('author', user.id); // sicurezza: solo il proprio post
 
   if (updateError) {
     return res.status(500).json({ error: 'Errore durante la barratura del post' });
