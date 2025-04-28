@@ -295,7 +295,7 @@ function PostList({ provinceId }: { provinceId: number }) {
         const msg = await res.text();
         console.error('Errore barratura post:', msg);
       } else {
-        mutate(key);
+        mutate(key, undefined, { revalidate: true });
       }
     } catch (err) {
       console.error('Errore network barratura:', err);
