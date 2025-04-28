@@ -417,7 +417,7 @@ function CommentList({
       setReplying(null);
       setReplyText('');
       mutate(`/api/posts/${postId}/comments`); // aggiorna commenti
-      mutate(`/api/comments/replies?commentIds=${commentId}`); // 🔥 AGGIUNGI QUESTA RIGA per aggiornare risposte
+      mutate(`/api/comments/replies?commentIds=${comments?.map((c) => c.id).join(',')}`);
     }
     } catch (err) {
       console.error('Errore network risposta:', err);
