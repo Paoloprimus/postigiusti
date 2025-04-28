@@ -184,32 +184,30 @@ function PostList({ provinceId }: { provinceId: number }) {
   const key = `/api/provinces/${provinceId}/posts?limit=5`;
   const { data: posts, error } = useSWR<Post[]>(key, fetcher);
   console.log('POSTS:', posts);
-  const [creatingType, setCreatingType] = useState<'cerco' | 'offro' | null>(
-    null
-  );
+  const [creatingType, setCreatingType] = useState<'cerco' | 'offro' | null>(null);
   const [newText, setNewText] = useState('');
   const [expanded, setExpanded] = useState<number[]>([]);
   const [commenting, setCommenting] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-const clickTimers = useRef<{ [key: number]: NodeJS.Timeout }>({});
+  const clickTimers = useRef<{ [key: number]: NodeJS.Timeout }>({});
 
-const handleClick = (postId: number) => {
-  if (clickTimers.current[postId]) {
-    clearTimeout(clickTimers.current[postId]);
-    delete clickTimers.current[postId];
-    setCommenting(postId);  // doppio click ➔ scrivi commento
-  } else {
-    clickTimers.current[postId] = setTimeout(() => {
-      setExpanded(prev =>
-        prev.includes(postId)
-          ? prev.filter(x => x !== postId)
-          : [...prev, postId]
-      ); // singolo click ➔ apre commenti
+  const handleClick = (postId: number) => {
+    if (clickTimers.current[postId]) {
+      clearTimeout(clickTimers.current[postId]);
       delete clickTimers.current[postId];
-    }, 300);
-  }
-};
+      setCommenting(postId);
+    } else {
+      clickTimers.current[postId] = setTimeout(() => {
+        setExpanded(prev =>
+          prev.includes(postId)
+            ? prev.filter(x => x !== postId)
+            : [...prev, postId]
+        );
+        delete clickTimers.current[postId];
+      }, 300);
+    }
+  };
 
   useEffect(() => {
     if (creatingType && inputRef.current) inputRef.current.focus();
@@ -227,12 +225,9 @@ const handleClick = (postId: number) => {
     checkSession();
   }, []);
 
-  
   const createPost = async () => {
     if (!newText.trim() || !creatingType) return;
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { error } = await supabase.from('posts').insert({
       province_id: provinceId,
@@ -248,61 +243,70 @@ const handleClick = (postId: number) => {
     }
   };
 
-// ——— AGGIORNATO: usa l’endpoint API e passa il JWT dell’utente
-const createComment = async (postId: number, content: string) => {
-  if (!content.trim()) return;
+  const createComment = async (postId: number, content: string) => {
+    if (!content.trim()) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
 
-  try {
-    // recupera il token dell’utente loggato
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const token = session?.access_token;
+      const res = await fetch(`/api/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ content }),
+      });
 
-    const res = await fetch(`/api/posts/${postId}/comments`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({ content }),
-    });
-
-    if (!res.ok) {
-      const msg = await res.text();
-      console.error('Errore creazione commento:', msg);
-    } else {
-      setCommenting(null);
-      // ricarica la lista commenti di quel post
-      mutate(`/api/posts/${postId}/comments?limit=5`);
+      if (!res.ok) {
+        const msg = await res.text();
+        console.error('Errore creazione commento:', msg);
+      } else {
+        setCommenting(null);
+        mutate(`/api/posts/${postId}/comments?limit=5`);
+      }
+    } catch (err) {
+      console.error('Errore network commento:', err);
     }
-  } catch (err) {
-    console.error('Errore network commento:', err);
-  }
-};
-// ————————————————————————————————————————————————————————————————
+  };
+
+  const handleClosePost = async (postId: number) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        console.error('Nessun token disponibile: utente non loggato.');
+        return;
+      }
+      const res = await fetch(`/api/posts/${postId}/close`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const msg = await res.text();
+        console.error('Errore barratura post:', msg);
+      } else {
+        mutate(key);
+      }
+    } catch (err) {
+      console.error('Errore network barratura:', err);
+    }
+  };
 
   const getColor = (type: string) => (type === 'cerco' ? 'text-orange-500' : 'text-green-700');
 
-  
   if (error) return <div>Errore caricamento post.</div>;
   if (!posts) return <div>Caricamento post...</div>;
 
   return (
     <ul className="pl-8 space-y-2">
       <li className="space-x-4">
-        <button
-          className="text-green-700 hover:underline text-sm"
-          onClick={() => setCreatingType('offro')}
-        >
-          + OFFRO
-        </button>
-        <button
-          className="text-orange-500 hover:underline text-sm"
-          onClick={() => setCreatingType('cerco')}
-        >
-          + CERCO
-        </button>
+        <button className="text-green-700 hover:underline text-sm" onClick={() => setCreatingType('offro')}>+ OFFRO</button>
+        <button className="text-orange-500 hover:underline text-sm" onClick={() => setCreatingType('cerco')}>+ CERCO</button>
       </li>
       {creatingType && (
         <li>
@@ -325,18 +329,24 @@ const createComment = async (postId: number, content: string) => {
       )}
       {posts.map((post) => (
         <li key={post.id}>
-
-        <div
-          className={`${getColor(post.type)} cursor-pointer`} // tolto underline
-          onClick={() => handleClick(post.id)}
-        >
-          {post.type === 'offro' ? 'OFFRO: ' : 'CERCO: '}
-          <span className="text-black">{post.content}</span>
-          <small className="ml-2 text-gray-500">
-            [{post.nickname ?? post.email}, {timeAgo(post.created_at)}]
-          </small>
-          
-        </div>
+          <div className={`${getColor(post.type)} cursor-pointer`} onClick={() => handleClick(post.id)}>
+            {post.type === 'offro' ? 'OFFRO: ' : 'CERCO: '}
+            <span className="text-black">{post.content}</span>
+            <small className="ml-2 text-gray-500">
+              [{post.nickname ?? post.email}, {timeAgo(post.created_at)}]
+            </small>
+            {post.closed === false && userId === post.author && (
+              <button
+                className="ml-2 text-red-500 text-xs hover:underline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClosePost(post.id);
+                }}
+              >
+                Barra
+              </button>
+            )}
+          </div>
 
           {expanded.includes(post.id) && (
             <CommentList
@@ -360,6 +370,7 @@ const createComment = async (postId: number, content: string) => {
     </ul>
   );
 }
+
 
 function CommentList({
   postId,
