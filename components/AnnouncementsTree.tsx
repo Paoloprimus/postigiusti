@@ -447,7 +447,8 @@ function CommentList({
               Rispondi
             </button>
           )}
-
+        </div> 
+          
           {replying === c.id && (
             <input
               className="ml-14 mt-1 w-full p-1 border rounded text-sm"
