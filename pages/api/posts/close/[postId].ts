@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     global: {
       headers: {
-        Authorization: Bearer ${token},
+        Authorization: 'Bearer ${token}',
       },
     },
   });
