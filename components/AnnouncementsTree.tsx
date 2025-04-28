@@ -283,7 +283,7 @@ function PostList({ provinceId }: { provinceId: number }) {
         return;
       }
       console.log('Chiamo fetch su:', `/api/posts/${postId}/close`);
-      const res = await fetch(`/api/posts/${postId}/close`, {
+      const res = await fetch(`/api/posts/close/${postId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
