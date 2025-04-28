@@ -17,6 +17,7 @@ export type Post = {
   type: 'cerco' | 'offro';
   nickname?: string;  // 🔵 aggiunto qui
   email?: string;     // 🔵 aggiunto qui
+  closed?: boolean;
 };
 
 export type CommentWithAuthor = {
