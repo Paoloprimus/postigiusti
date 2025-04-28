@@ -20,24 +20,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     global: {
       headers: {
-        Authorization: 'Bearer ${token}',
+        Authorization: `Bearer ${token}`,
       },
     },
   });
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return res.status(401).json({ error: 'Utente non autenticato' });
-  }
-
   const { error: updateError } = await supabase
     .from('posts')
     .update({ closed: true })
-    .eq('id', Number(postId))
+    .eq('id', Number(postId));
 
   if (updateError) {
     return res.status(500).json({ error: 'Errore durante la barratura del post' });
