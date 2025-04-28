@@ -374,6 +374,7 @@ function CommentList({
     `/api/posts/${postId}/comments`,
     fetcher
   );
+  const commentIds = comments?.map(c => c.id).join(',');
   const { data: replies } = useSWR<Reply[]>(
     comments ? `/api/comments/replies?commentIds=${comments.map(c => c.id).join(',')}` : null,
     fetcher
@@ -416,8 +417,10 @@ function CommentList({
     } else {
       setReplying(null);
       setReplyText('');
-      mutate(`/api/posts/${postId}/comments`); // aggiorna commenti
-      mutate(`/api/comments/replies?commentIds=${comments?.map((c) => c.id).join(',')}`);
+      mutate(`/api/posts/${postId}/comments`);
+      if (commentIds) {
+        mutate(`/api/comments/replies?commentIds=${commentIds}`);
+      }
     }
     } catch (err) {
       console.error('Errore network risposta:', err);
