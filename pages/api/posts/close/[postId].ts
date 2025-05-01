@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   const { error: updateError } = await supabase
-    .from('posts')
+    .from('posts') // 🔥 assicurato: tabella vera
     .update({ closed: true })
     .eq('id', Number(postId));
 
