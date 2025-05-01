@@ -11,6 +11,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { postId } = req.query;
 
+  console.log('postId raw:', postId, 'as number:', Number(postId));
+
   const token = req.headers.authorization?.replace('Bearer ', '');
 
   if (!token) {
