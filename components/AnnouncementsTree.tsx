@@ -389,6 +389,7 @@ function CommentList({
   postId,
   postAuthorId,
   colorClass,
+  postClosed: boolean;
 }: {
   postId: number;
   postAuthorId: string;
