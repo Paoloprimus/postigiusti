@@ -400,8 +400,7 @@ function CommentList({
     `/api/posts/${postId}/comments`,
     fetcher
   );
-  const commentIds = comments?.map(c => c.id).join(',');
-  
+
   const commentIds = comments?.map(c => c.id).join(',');
   const { data: replies } = useSWR<Reply[]>(
     commentIds ? `/api/comments/replies?commentIds=${commentIds}` : null,
