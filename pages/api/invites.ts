@@ -2,6 +2,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { v4 as uuidv4 } from 'uuid';
+import nodemailer from 'nodemailer';
 
 export default async function handler(
   req: NextApiRequest,
@@ -49,6 +50,17 @@ async function handleCreateInvite(req, res, supabase, session) {
   if (error) {
     return res.status(500).json({ error: error.message });
   }
+
+  // Configura il transporter SMTP (porta 587 con STARTTLS)
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    secure: false, // perché usi STARTTLS (non SSL diretto)
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
   
   return res.status(201).json(data);
 }
