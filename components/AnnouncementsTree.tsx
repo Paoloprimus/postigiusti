@@ -389,11 +389,12 @@ function CommentList({
   postId,
   postAuthorId,
   colorClass,
-  postClosed: boolean;
+  postClosed,
 }: {
   postId: number;
   postAuthorId: string;
   colorClass: string;
+  postClosed: boolean;
 }) {
   const { data: comments, error } = useSWR<CommentWithAuthor[]>(
     `/api/posts/${postId}/comments`,
@@ -412,41 +413,40 @@ function CommentList({
   const [replyText, setReplyText] = useState('');
 
   const submitReply = async (commentId: number) => {
-  if (!replyText.trim()) return;
+    if (!replyText.trim()) return;
 
-  try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const token = session?.access_token;
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
 
-    if (!token) {
-      console.error('Nessun token disponibile: utente non loggato.');
-      return;
-    }
-
-    const res = await fetch(`/api/comments/${commentId}/replies`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      credentials: 'include', // 👈 questa riga aggiunta
-      body: JSON.stringify({ content: replyText }),
-    });
-
-
-    if (!res.ok) {
-      const msg = await res.text();
-      console.error('Errore salvataggio risposta:', msg);
-    } else {
-      setReplying(null);
-      setReplyText('');
-      mutate(`/api/posts/${postId}/comments`);
-      if (commentIds) {
-        mutate(`/api/comments/replies?commentIds=${commentIds}`);
+      if (!token) {
+        console.error('Nessun token disponibile: utente non loggato.');
+        return;
       }
-    }
+
+      const res = await fetch(`/api/comments/${commentId}/replies`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+        body: JSON.stringify({ content: replyText }),
+      });
+
+      if (!res.ok) {
+        const msg = await res.text();
+        console.error('Errore salvataggio risposta:', msg);
+      } else {
+        setReplying(null);
+        setReplyText('');
+        mutate(`/api/posts/${postId}/comments`);
+        if (commentIds) {
+          mutate(`/api/comments/replies?commentIds=${commentIds}`);
+        }
+      }
     } catch (err) {
       console.error('Errore network risposta:', err);
     }
@@ -455,29 +455,31 @@ function CommentList({
   if (error) return <div>Errore caricamento commenti.</div>;
   if (!comments) return <div>Caricamento commenti...</div>;
 
-  console.log('COMMENTS:', comments);
-
   return (
     <ul className="pl-12 space-y-1">
-    {comments.map((c) => (
+      {comments.map((c) => (
         <li key={c.id} className="flex flex-col">
           <div className="flex items-center">
-            <span className={`text-sm ${colorClass}`}>{c.content}</span>
+            <span className={`text-sm ${colorClass}`}>
+              {postClosed ? <s>{c.content}</s> : c.content}
+            </span>
             <small className="ml-2 text-gray-500">
               [{c.nickname}, {timeAgo(c.created_at)}]
             </small>
 
-          {userId === postAuthorId && !replies?.some((r: Reply) => r.comment_id === c.id) && (
-            <button
-              className="ml-2 text-blue-500 text-xs"
-              onClick={() => setReplying(c.id)}
-            >
-              Rispondi
-            </button>
-          )}
-        </div> 
-          
-          {replying === c.id && (
+            {userId === postAuthorId &&
+              !postClosed &&
+              !replies?.some((r: Reply) => r.comment_id === c.id) && (
+                <button
+                  className="ml-2 text-blue-500 text-xs"
+                  onClick={() => setReplying(c.id)}
+                >
+                  Rispondi
+                </button>
+              )}
+          </div>
+
+          {!postClosed && replying === c.id && (
             <input
               className="ml-14 mt-1 w-full p-1 border rounded text-sm"
               placeholder="Scrivi una risposta..."
@@ -493,14 +495,13 @@ function CommentList({
               autoFocus
             />
           )}
-      
-          {/* 👇 QUI SOTTO: VISUALIZZIAMO LE RISPOSTE */}
+
           {replies &&
             replies
               .filter((r: any) => r.comment_id === c.id)
               .map((r: any) => (
                 <div key={r.id} className="ml-20 mt-1 text-sm text-gray-700">
-                  {r.content}
+                  {postClosed ? <s>{r.content}</s> : r.content}
                   <small className="ml-2 text-gray-500">
                     [{r.nickname}, {timeAgo(r.created_at)}]
                   </small>
@@ -508,7 +509,6 @@ function CommentList({
               ))}
         </li>
       ))}
-
     </ul>
   );
 }
