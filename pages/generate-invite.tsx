@@ -74,6 +74,12 @@ export default function GenerateInvite() {
     setError('');
     setSuccess('');
 
+    if (!email.trim()) {
+      setError('Devi specificare un’email per generare l’invito.');
+      setGenerating(false);
+      return;
+    }
+    
     try {
       // Verifica sessione
       const { data: { session } } = await supabase.auth.getSession();
