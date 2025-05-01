@@ -61,9 +61,34 @@ async function handleCreateInvite(req, res, supabase, session) {
       pass: process.env.SMTP_PASS,
     },
   });
-  
+
+  // Costruisci e invia l’email
+  const mailOptions = {
+    from: `"${process.env.FROM_NAME}" <${process.env.FROM_EMAIL}>`,
+    to: email,
+    subject: 'Sei stato invitato su Posti Giusti',
+    text: `Ciao,
+
+sei stato invitato a unirti a Posti Giusti.
+
+Visita il sito https://postigiusti.com/signup
+e inserisci la seguente chiave di invito:
+
+${token}
+
+A presto!`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (emailError) {
+    console.error('Errore invio email:', emailError);
+    return res.status(500).json({ error: 'Errore durante l’invio dell’email di invito.' });
+  }
+
   return res.status(201).json(data);
 }
+
 
 async function handleGetInvites(req, res, supabase, session) {
   const { data, error } = await supabase
