@@ -284,7 +284,7 @@ function PostList({ provinceId }: { provinceId: number }) {
         console.error('Nessun token disponibile: utente non loggato.');
         return;
       }
-      const res = await fetch(`/api/posts/${postId}/close`, {
+      const res = await fetch(`/api/posts/close/${postId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -401,10 +401,13 @@ function CommentList({
     fetcher
   );
   const commentIds = comments?.map(c => c.id).join(',');
+  
+  const commentIds = comments?.map(c => c.id).join(',');
   const { data: replies } = useSWR<Reply[]>(
-    comments ? `/api/comments/replies?commentIds=${comments.map(c => c.id).join(',')}` : null,
+    commentIds ? `/api/comments/replies?commentIds=${commentIds}` : null,
     fetcher
   );
+
   console.log('COMMENTS:', comments);
   const { data: session } = useSWR('user', () => supabase.auth.getUser());
   const userId = session?.data?.user?.id;
