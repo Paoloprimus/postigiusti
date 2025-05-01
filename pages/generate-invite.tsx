@@ -172,9 +172,10 @@ export default function GenerateInvite() {
               onChange={e => setEmail(e.target.value)}
               className="w-full border rounded px-3 py-2"
               placeholder="email@esempio.com"
+              required
             />
             <p className="text-xs text-gray-500 mt-1">
-              Se specificata, l'invito sarà valido solo per questa email
+              L’invito sarà valido solo per questa email
             </p>
           </div>
           <button
