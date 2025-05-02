@@ -100,16 +100,22 @@ export default function GenerateInvite() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`, // 🔐 IMPORTANTE
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ email }),
       });
-  
-      const result = await response.json();
-  
+      
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        result = { error: 'Risposta non valida dal server (nessun JSON)' };
+      }
+      
       if (!response.ok) {
         throw new Error(result.error || 'Errore dal server');
       }
+
   
       // Aggiungi l'invito localmente
       const typedNewInvite: LocalInvite = {
