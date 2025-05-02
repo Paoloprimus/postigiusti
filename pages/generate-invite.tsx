@@ -73,20 +73,20 @@ export default function GenerateInvite() {
     setGenerating(true);
     setError('');
     setSuccess('');
-
+  
     if (!email.trim()) {
       setError('Devi specificare un’email per generare l’invito.');
       setGenerating(false);
       return;
     }
-    
+  
     try {
-      // Verifica sessione
+      // Ottieni il token di sessione da Supabase
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('Sessione non valida');
       }
-      
+  
       // Verifica limite inviti pendenti
       const pendingCount = invites.filter(i => !i.used && !i.approved).length;
       if (pendingCount >= 3) {
@@ -94,50 +94,47 @@ export default function GenerateInvite() {
         setGenerating(false);
         return;
       }
-      
-      // Genera token e crea l'invito
-      const token = uuidv4();
-      const newInvite = {
-        token,
-        email: email || null,
-        invited_by: session.user.id,
-        approved: false,
-        used: false
-      };
-      
-      const { data, error } = await supabase
-        .from('invites')
-        .insert(newInvite)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      if (data) {
-        // Costruisci manualmente il nuovo oggetto
-        const typedNewInvite: LocalInvite = {
-          id: data.id,
-          token: data.token,
-          email: data.email,
-          invited_by: data.invited_by,
-          approved_by: data.approved_by || null,
-          used_by: data.used_by || null,
-          approved: !!data.approved,
-          used: !!data.used,
-          created_at: data.created_at
-        };
-        
-        setInvites([typedNewInvite, ...invites]);
-        setSuccess('Invito generato con successo!');
-        setEmail('');
+  
+      // Chiamata all'API backend /api/invites passando il token JWT
+      const response = await fetch('/api/invites', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`, // 🔐 IMPORTANTE
+        },
+        body: JSON.stringify({ email }),
+      });
+  
+      const result = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(result.error || 'Errore dal server');
       }
+  
+      // Aggiungi l'invito localmente
+      const typedNewInvite: LocalInvite = {
+        id: result.id,
+        token: result.token,
+        email: result.email,
+        invited_by: result.invited_by,
+        approved_by: result.approved_by || null,
+        used_by: result.used_by || null,
+        approved: !!result.approved,
+        used: !!result.used,
+        created_at: result.created_at
+      };
+  
+      setInvites([typedNewInvite, ...invites]);
+      setSuccess('Invito generato con successo!');
+      setEmail('');
     } catch (err: any) {
-      console.error('Error generating invite:', err);
+      console.error('Errore generazione invito:', err);
       setError(err.message || 'Errore durante la generazione dell\'invito');
     }
-    
+  
     setGenerating(false);
   };
+
 
   const copyInviteLink = (token: string) => {
     const link = `${window.location.origin}/signup?token=${token}`;
