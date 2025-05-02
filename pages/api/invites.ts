@@ -53,13 +53,14 @@ async function handleCreateInvite(req, res, supabase, session) {
 
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
-    port: 465,
-    secure: true, // cambia qui
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    secure: false, // perché usi STARTTLS (non SSL diretto)
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
   });
+
 
 
   // Costruisci e invia l’email
