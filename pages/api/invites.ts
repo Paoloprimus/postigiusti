@@ -40,13 +40,14 @@ export default async function handler(
 
 async function handleCreateInvite(req, res, user) {
   console.log('✅ Entrato in handleCreateInvite per', user.email || user.id);
+
   const { email } = req.body;
   const token = uuidv4();
 
   const { data, error } = await supabase
     .from('invites')
     .insert({
-      invited_by: user.id,
+      invited_by: user.id, // ✅ ora sicuro che user è l'oggetto corretto
       email,
       token,
       used: false
@@ -55,6 +56,7 @@ async function handleCreateInvite(req, res, user) {
     .single();
 
   if (error) {
+    console.error('❌ Errore inserimento invito:', error);
     return res.status(500).json({ error: error.message });
   }
 
