@@ -47,47 +47,42 @@ async function handleCreateInvite(req, res, supabase, session) {
     .select()
     .single();
     
-  if (error) {
-    return res.status(500).json({ error: error.message });
-  }
+if (error) {
+  return res.status(500).json({ error: error.message });
+}
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false, // perché usi STARTTLS (non SSL diretto)
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+// Aggiunto per forzare logging Vercel
+console.log('🧪 STO PER CONFIGURARE TRANSPORTER');
 
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
+console.log('📤 CONFIGURATO TRANSPORTER, ora invio email...');
 
-  // Costruisci e invia l’email
-  const mailOptions = {
-    from: `"${process.env.FROM_NAME}" <${process.env.FROM_EMAIL}>`,
-    to: email,
-    subject: 'Sei stato invitato su Posti Giusti',
-    text: `Ciao,
-
-sei stato invitato a unirti a Posti Giusti.
-
-Visita il sito https://postigiusti.com/signup
-e inserisci la seguente chiave di invito:
-
-${token}
-
-A presto!`,
-  };
+const mailOptions = {
+  from: `"${process.env.FROM_NAME}" <${process.env.FROM_EMAIL}>`,
+  to: email,
+  subject: 'Sei stato invitato su Posti Giusti',
+  text: `Ciao,\n\nsei stato invitato a unirti a Posti Giusti.\n\nVai su https://postigiusti.com/signup e inserisci questa chiave:\n\n${token}\n\nA presto!`,
+};
 
 try {
-  console.log('📤 Tentativo di invio email a', email);
   await transporter.sendMail(mailOptions);
-  console.log('✅ Email inviata con successo a', email);
+  console.log('✅ EMAIL INVIATA A', email);
 } catch (emailError) {
-  console.error('❌ Errore invio email:', emailError);
+  console.error('❌ ERRORE INVIO EMAIL:', emailError);
   return res.status(500).json({ error: 'Errore durante l’invio dell’email di invito.' });
 }
+
+
+
 
 
   return res.status(201).json(data);
