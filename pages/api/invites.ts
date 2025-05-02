@@ -30,7 +30,7 @@ export default async function handler(
   // Gestione metodi
   switch (req.method) {
     case 'POST':
-      return handleCreateInvite(req, res, user.user);
+      return handleCreateInvite(req, res, user);
     default:
       return res.status(405).json({ error: 'Metodo non permesso' });
   }
