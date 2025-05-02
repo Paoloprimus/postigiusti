@@ -27,6 +27,8 @@ export default async function handler(
     return res.status(401).json({ error: 'Non autorizzato' });
   }
 
+  console.log('👉 Metodo ricevuto:', req.method);
+
   // Gestione metodi
   switch (req.method) {
     case 'POST':
@@ -37,6 +39,7 @@ export default async function handler(
 }
 
 async function handleCreateInvite(req, res, user) {
+  console.log('✅ Entrato in handleCreateInvite per', user.email || user.id);
   const { email } = req.body;
   const token = uuidv4();
 
