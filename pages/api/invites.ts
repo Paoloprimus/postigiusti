@@ -32,14 +32,14 @@ export default async function handler(
   // Gestione metodi
   switch (req.method) {
     case 'POST':
-      return handleCreateInvite(req, res, user);
+      return handleCreateInvite(req, res, user.user);
     default:
       return res.status(405).json({ error: 'Metodo non permesso' });
   }
 }
 
 async function handleCreateInvite(req, res, user) {
-  console.log('✅ Entrato in handleCreateInvite per', user.email || user.id);
+  console.log('✅ Entrato in handleCreateInvite con:', user);
 
   const { email } = req.body;
   const token = uuidv4();
