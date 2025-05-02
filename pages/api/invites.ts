@@ -81,6 +81,7 @@ A presto!`,
 
   try {
     await transporter.sendMail(mailOptions);
+    console.log('Email inviata a', email); 
   } catch (emailError) {
     console.error('Errore invio email:', emailError);
     return res.status(500).json({ error: 'Errore durante l’invio dell’email di invito.' });
