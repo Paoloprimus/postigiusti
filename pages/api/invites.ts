@@ -79,13 +79,15 @@ ${token}
 A presto!`,
   };
 
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log('Email inviata a', email); 
-  } catch (emailError) {
-    console.error('Errore invio email:', emailError);
-    return res.status(500).json({ error: 'Errore durante l’invio dell’email di invito.' });
-  }
+try {
+  console.log('📤 Tentativo di invio email a', email);
+  await transporter.sendMail(mailOptions);
+  console.log('✅ Email inviata con successo a', email);
+} catch (emailError) {
+  console.error('❌ Errore invio email:', emailError);
+  return res.status(500).json({ error: 'Errore durante l’invio dell’email di invito.' });
+}
+
 
   return res.status(201).json(data);
 }
