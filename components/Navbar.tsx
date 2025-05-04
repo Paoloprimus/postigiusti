@@ -34,7 +34,7 @@ export default function Navbar() {
         {/* Menu for authenticated users */}
         {user && (
           <div className="flex items-center space-x-4">
-            <Link href="/announcements">
+            <Link href="/dashboard">
               <span className="hover:underline cursor-pointer">Bacheca</span>
             </Link>
             <Link href="/messages">
