@@ -16,7 +16,7 @@ export default function LoginPage() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         // sono già loggato: redirect immediato
-        router.replace('/announcements');
+        router.replace('/dashboard');
       } else {
         // non loggato: posso mostrare il form
         setInitializing(false);
@@ -36,7 +36,7 @@ export default function LoginPage() {
     if (error) {
       setErrorMsg(error.message);
     } else {
-      router.push('/announcements');
+      router.push('/dashboard');
     }
   };
 
