@@ -7,18 +7,39 @@ import { supabase } from '../lib/supabase';
 export default function Navbar() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [nickname, setNickname] = useState<string | null>(null);
 
   useEffect(() => {
     // Subscribe to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
+      if (session?.user) {
+        fetchNickname(session.user.id);
+      }
     });
+
     // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user || null);
+      const currentUser = session?.user || null;
+      setUser(currentUser);
+      if (currentUser) {
+        fetchNickname(currentUser.id);
+      }
     });
+
     return () => subscription?.unsubscribe();
   }, []);
+
+  const fetchNickname = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('nickname')
+      .eq('id', userId)
+      .single();
+    if (!error && data) {
+      setNickname(data.nickname);
+    }
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -44,7 +65,9 @@ export default function Navbar() {
               <span className="hover:underline cursor-pointer">Notifiche</span>
             </Link>
             <Link href="/profile">
-              <span className="hover:underline cursor-pointer">Profilo</span>
+              <span className="hover:underline cursor-pointer">
+                {nickname || 'Profilo'}
+              </span>
             </Link>
             <button onClick={handleSignOut} className="hover:underline cursor-pointer">
               Esci
