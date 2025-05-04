@@ -13,11 +13,13 @@ export default function Signup() {
   const [nickname, setNickname] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
 
     // Verifica token
     const { data: invite, error: inviteErr } = await supabase
@@ -57,7 +59,7 @@ export default function Signup() {
     });
 
     setLoading(false);
-    router.push('/dashboard');
+    setSuccessMessage('Registrazione avvenuta! Controlla la tua email e clicca sul link per attivare il tuo account.');
   };
 
   return (
@@ -70,6 +72,7 @@ export default function Signup() {
       <div className="max-w-md mx-auto mt-6 p-6 border rounded shadow">
         <h1 className="text-2xl font-bold mb-4 text-center">Registrati</h1>
         {error && <p className="text-red-600 mb-4">{error}</p>}
+        {successMessage && <p className="text-green-600 mb-4">{successMessage}</p>}
         <form onSubmit={handleSignup} className="space-y-4">
           <div>
             <label className="block text-sm mb-1">Token di invito</label>
