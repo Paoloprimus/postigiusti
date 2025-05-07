@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { Home } from 'lucide-react'; // Importa l'icona Home da lucide-react
 
 export default function Navbar() {
   const router = useRouter();
@@ -36,6 +37,7 @@ export default function Navbar() {
       .select('nickname')
       .eq('id', userId)
       .single();
+
     if (!error && data) {
       setNickname(data.nickname);
     }
@@ -49,8 +51,11 @@ export default function Navbar() {
   return (
     <nav className="bg-blue-600 text-white py-4">
       <div className="container mx-auto px-4 flex justify-between items-center">
-        {/* Brand title */}
-        <h1 className="text-xl font-bold">Posti Giusti</h1>
+        {/* Brand title with Home icon */}
+        <div className="flex items-center">
+          <Home className="w-6 h-6 mr-2 text-white" />
+          <h1 className="text-xl font-bold">Posti Giusti</h1>
+        </div>
 
         {/* Menu for authenticated users */}
         {user && (
