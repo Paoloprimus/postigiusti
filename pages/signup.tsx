@@ -27,6 +27,10 @@ export default function Signup() {
       .eq('token', token)
       .eq('used', false)
       .single();
+
+    // 👉 Log diagnostico
+    console.log('Risultato verifica token:', { invite, inviteErr });
+
     if (inviteErr || !invite) {
       setError('Token di invito non valido o già utilizzato.');
       return;
