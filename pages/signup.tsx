@@ -20,16 +20,14 @@ export default function Signup() {
     e.preventDefault();
     setError('');
 
-    // Verifica token
-    const { data: invite, error: inviteErr } = await supabase
+    // Verifica token (versione robusta)
+    const { data: invites, error: inviteErr } = await supabase
       .from('invites')
       .select('*')
       .eq('token', token)
-      .eq('used', false)
-      .single();
+      .eq('used', false);
 
-    // 👉 Log diagnostico
-    console.log('Risultato verifica token:', { invite, inviteErr });
+    const invite = invites?.[0];
 
     if (inviteErr || !invite) {
       setError('Token di invito non valido o già utilizzato.');
