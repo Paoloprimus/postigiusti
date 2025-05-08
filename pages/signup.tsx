@@ -20,17 +20,28 @@ export default function Signup() {
     e.preventDefault();
     setError('');
 
-    // Verifica token (versione robusta)
+    // 🔍 Log token e email
+    console.log('🔍 Verifica invito per:', { token, email });
+
+    // Query inviti
     const { data: invites, error: inviteErr } = await supabase
       .from('invites')
       .select('*')
-      .eq('token', token)
+      .eq('token', token.trim())
       .eq('used', false);
+
+    console.log('📦 Inviti trovati:', invites);
+    console.log('❌ Errore query:', inviteErr);
 
     const invite = invites?.[0];
 
-    if (inviteErr || !invite) {
-      setError('Token di invito non valido o già utilizzato.');
+    if (inviteErr) {
+      setError('Errore nel controllo dell’invito. Riprova più tardi.');
+      return;
+    }
+
+    if (!invite) {
+      setError('Token di invito non valido o già utilizzato. Assicurati che il codice sia corretto e non sia già stato usato.');
       return;
     }
 
