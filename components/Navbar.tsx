@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Home } from 'lucide-react'; // Importa l'icona Home da lucide-react
+import { Home } from 'lucide-react';
 
 export default function Navbar() {
   const router = useRouter();
@@ -12,27 +12,38 @@ export default function Navbar() {
   const [unreadCount, setUnreadCount] = useState<number>(0);
 
   useEffect(() => {
-    // Subscribe to auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    let userIdTemp: string | null = null;
+
+    const setup = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       const currentUser = session?.user || null;
       setUser(currentUser);
-      if (currentUser) {
-        fetchNickname(currentUser.id);
-        fetchUnreadMessages(currentUser.id);
-      }
-    });
 
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const currentUser = session?.user || null;
-      setUser(currentUser);
       if (currentUser) {
-        fetchNickname(currentUser.id);
-        fetchUnreadMessages(currentUser.id);
-      }
-    });
+        userIdTemp = currentUser.id;
+        fetchNickname(userIdTemp);
+        fetchUnreadMessages(userIdTemp);
 
-    return () => subscription?.unsubscribe();
+        // 🔁 Subscription realtime su messaggi ricevuti/aggiornati
+        supabase
+          .channel('unread-messages')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'messages',
+              filter: `receiver_id=eq.${userIdTemp}`,
+            },
+            () => {
+              fetchUnreadMessages(userIdTemp!);
+            }
+          )
+          .subscribe();
+      }
+    };
+
+    setup();
   }, []);
 
   const fetchNickname = async (userId: string) => {
