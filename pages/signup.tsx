@@ -45,17 +45,30 @@ export default function Signup() {
       return;
     }
 
-    setLoading(true);
+  // 🔍 Controllo unicità nickname
+  const { data: existingNick, error: nickError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('nickname', nickname)
+    .maybeSingle();
+  
+  if (existingNick) {
+    setError('Questo nickname è già in uso. Scegline un altro.');
+    return;
+  }
+  
+  setLoading(true);
+  
+  // Crea account
+  const { data: authData, error: authErr } =
+    await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: 'https://www.postigiusti.com/dashboard',
+      },
+    });
 
-    // Crea account
-    const { data: authData, error: authErr } =
-      await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: 'https://www.postigiusti.com/dashboard',
-        },
-      });
 
     if (authErr) {
       setError('Errore registrazione: ' + authErr.message);
