@@ -42,6 +42,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Contenuto della risposta mancante o non valido.' });
   }
 
+  // ❗ Controlla se esiste già una risposta per questo commento
+  const { data: existingReplies, error: existingError } = await supabase
+    .from('replies')
+    .select('id')
+    .eq('comment_id', Number(commentId));
+
+  if (existingError) {
+    return res.status(500).json({ error: 'Errore nel controllo risposte esistenti' });
+  }
+
+  if (existingReplies && existingReplies.length > 0) {
+    return res.status(400).json({ error: 'Questo commento ha già una risposta' });
+  }
+
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('nickname')
