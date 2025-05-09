@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { id } = req.query;
-  console.log('👉 postId:', postId, 'as number:', Number(postId));
+  console.log('👉 id:', id, 'as number:', Number(id));
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
