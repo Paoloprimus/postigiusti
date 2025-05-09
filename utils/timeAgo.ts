@@ -1,7 +1,7 @@
 export function timeAgo(dateString: string) {
-  const date = new Date(dateString); // NON aggiungere offset
+  const utc = new Date(dateString);
   const now = new Date();
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  const seconds = Math.floor((now.getTime() - utc.getTime()) / 1000);
 
   if (seconds < 60) return `${seconds} secondi fa`;
   const minutes = Math.floor(seconds / 60);
