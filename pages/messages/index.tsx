@@ -19,38 +19,58 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  const fetchMessages = async (user_id: string) => {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*, sender:profiles!messages_sender_id_fkey(nickname), receiver:profiles!messages_receiver_id_fkey(nickname)')
+      .order('created_at', { ascending: false });
 
-      if (!user) return;
-      setUserId(user.id);
+    if (!error && data) {
+      setMessages(data);
 
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*, sender:profiles!messages_sender_id_fkey(nickname), receiver:profiles!messages_receiver_id_fkey(nickname)')
-        .order('created_at', { ascending: false });
+      // 🔔 Marca come letti i messaggi ricevuti non letti
+      const unreadIds = data
+        .filter((msg) => msg.receiver_id === user_id && msg.read === false)
+        .map((msg) => msg.id);
 
-      if (!error && data) {
-        setMessages(data);
-
-        // 🔔 Marca come letti tutti i messaggi ricevuti non letti
-        const unreadIds = data
-          .filter((msg) => msg.receiver_id === user.id && msg.read === false)
-          .map((msg) => msg.id);
-
-        if (unreadIds.length > 0) {
-          await supabase
-            .from('messages')
-            .update({ read: true })
-            .in('id', unreadIds);
-        }
+      if (unreadIds.length > 0) {
+        await supabase
+          .from('messages')
+          .update({ read: true })
+          .in('id', unreadIds);
       }
+    }
+  };
+
+  useEffect(() => {
+    let user_id: string;
+
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      user_id = user.id;
+      setUserId(user_id);
+      await fetchMessages(user_id);
+
+      // 🔁 Subscription: aggiorna in tempo reale
+      supabase
+        .channel('messages-realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'messages',
+            filter: `receiver_id=eq.${user_id}`,
+          },
+          () => {
+            fetchMessages(user_id);
+          }
+        )
+        .subscribe();
     };
 
-    fetchMessages();
+    init();
   }, []);
 
   return (
