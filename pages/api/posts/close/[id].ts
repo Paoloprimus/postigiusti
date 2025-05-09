@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { error: updateError } = await supabase
     .from('posts') // 🔥 assicurato: tabella vera
     .update({ closed: true })
-    .eq('id', Number(postId));
+    .eq('id', Number(id));
 
   if (updateError) {
     console.error('❌ Update error:', updateError);
