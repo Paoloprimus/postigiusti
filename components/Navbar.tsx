@@ -9,13 +9,16 @@ export default function Navbar() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [nickname, setNickname] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
 
   useEffect(() => {
     // Subscribe to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-      if (session?.user) {
-        fetchNickname(session.user.id);
+      const currentUser = session?.user || null;
+      setUser(currentUser);
+      if (currentUser) {
+        fetchNickname(currentUser.id);
+        fetchUnreadMessages(currentUser.id);
       }
     });
 
@@ -25,6 +28,7 @@ export default function Navbar() {
       setUser(currentUser);
       if (currentUser) {
         fetchNickname(currentUser.id);
+        fetchUnreadMessages(currentUser.id);
       }
     });
 
@@ -40,6 +44,18 @@ export default function Navbar() {
 
     if (!error && data) {
       setNickname(data.nickname);
+    }
+  };
+
+  const fetchUnreadMessages = async (userId: string) => {
+    const { count, error } = await supabase
+      .from('messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('receiver_id', userId)
+      .eq('read', false);
+
+    if (!error && typeof count === 'number') {
+      setUnreadCount(count);
     }
   };
 
@@ -64,7 +80,14 @@ export default function Navbar() {
               <span className="hover:underline cursor-pointer">Bacheca</span>
             </Link>
             <Link href="/messages">
-              <span className="hover:underline cursor-pointer">Messaggi</span>
+              <span className="hover:underline cursor-pointer relative">
+                Messaggi
+                {unreadCount > 0 && (
+                  <sup className="ml-1 text-xs bg-red-500 text-white rounded-full px-1">
+                    {unreadCount}
+                  </sup>
+                )}
+              </span>
             </Link>
             <Link href="/notice">
               <span className="hover:underline cursor-pointer">Notifiche</span>
