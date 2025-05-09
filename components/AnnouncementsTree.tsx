@@ -315,25 +315,35 @@ function PostList({ provinceId }: { provinceId: number }) {
         <button className="text-green-700 hover:underline text-sm" onClick={() => setCreatingType('offro')}>+ OFFRO</button>
         <button className="text-orange-500 hover:underline text-sm" onClick={() => setCreatingType('cerco')}>+ CERCO</button>
       </li>
+
       {creatingType && (
         <li>
-          <input
-            ref={inputRef}
-            className="w-full p-1 border rounded"
-            placeholder={`Scrivi un nuovo annuncio "${creatingType.toUpperCase()}"`}
-            value={newText}
-            onChange={(e) => setNewText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') createPost();
-              if (e.key === 'Escape') {
-                setCreatingType(null);
-                setNewText('');
-              }
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              createPost();
             }}
-            onBlur={() => setCreatingType(null)}
-          />
+            className="flex gap-2"
+          >
+            <input
+              ref={inputRef}
+              className="w-full p-1 border rounded"
+              placeholder={`Scrivi un nuovo annuncio "${creatingType.toUpperCase()}"`}
+              value={newText}
+              onChange={(e) => setNewText(e.target.value)}
+              type="text"
+              autoComplete="off"
+            />
+            <button
+              type="submit"
+              className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+            >
+              Invia
+            </button>
+          </form>
         </li>
       )}
+
       {posts.map((post) => (
         <li key={post.id}>
           <div
@@ -488,21 +498,31 @@ function CommentList({
           </div>
 
           {!postClosed && replying === c.id && (
-            <input
-              className="ml-14 mt-1 w-full p-1 border rounded text-sm"
-              placeholder="Scrivi una risposta..."
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') submitReply(c.id);
-                if (e.key === 'Escape') {
-                  setReplyText('');
-                  setReplying(null);
-                }
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitReply(c.id);
               }}
-              autoFocus
-            />
+              className="ml-14 mt-1 flex gap-2"
+            >
+              <input
+                className="w-full p-1 border rounded text-sm"
+                placeholder="Scrivi una risposta..."
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                type="text"
+                autoComplete="off"
+                autoFocus
+              />
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+              >
+                Invia
+              </button>
+            </form>
           )}
+
 
           {replies &&
             replies
@@ -521,33 +541,42 @@ function CommentList({
   );
 }
 
-
-function NewCommentInput({ postId, onSubmit, onCancel }: { postId: number; onSubmit: (postId: number, content: string) => void; onCancel: () => void }) {
+function NewCommentInput({
+  postId,
+  onSubmit,
+  onCancel,
+}: {
+  postId: number;
+  onSubmit: (postId: number, content: string) => void;
+  onCancel: () => void;
+}) {
   const [text, setText] = useState('');
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    onSubmit(postId, text);
+    setText('');
+  };
+
   return (
-    <div className="pl-12">
+    <form onSubmit={handleSubmit} className="pl-12 flex gap-2">
       <input
-        className="w-full p-1 border rounded"
+        className="w-full p-1 border rounded text-sm"
         placeholder="Scrivi un commento..."
         value={text}
-        onChange={e => setText(e.target.value)}
-        onKeyDown={e => {
-          if (e.key === 'Enter') {
-            onSubmit(postId, text);
-            setText('');
-          }
-          if (e.key === 'Escape') {
-            setText('');
-            onCancel();
-          }
-        }}
-        onBlur={() => {
-          setText('');
-          onCancel();
-        }}
+        onChange={(e) => setText(e.target.value)}
+        type="text"
+        autoComplete="off"
       />
-    </div>
+      <button
+        type="submit"
+        className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+      >
+        Invia
+      </button>
+    </form>
   );
 }
+
 
