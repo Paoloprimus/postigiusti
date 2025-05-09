@@ -1,3 +1,4 @@
+// pages/api/posts/close/[id].ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 
@@ -12,20 +13,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { id } = req.query;
-  console.log('👉 id:', id, 'as number:', Number(id));
+  console.log('👉 id ricevuto dalla route:', id, '→ numero:', Number(id));
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   const { error: updateError } = await supabase
-    .from('posts') // 🔥 assicurato: tabella vera
+    .from('posts')
     .update({ closed: true })
     .eq('id', Number(id));
 
   if (updateError) {
-    console.error('❌ Update error:', updateError);
+    console.error('❌ Errore durante l\'aggiornamento:', updateError);
     return res.status(500).json({ error: 'Errore durante la barratura del post' });
   }
 
-  console.log('✅ Post aggiornato con successo');
+  console.log('✅ Post aggiornato con successo in Supabase');
   return res.status(200).json({ message: 'Post barrato con successo' });
 }
