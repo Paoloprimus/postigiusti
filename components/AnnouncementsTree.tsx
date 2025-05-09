@@ -45,8 +45,17 @@ export default function AnnouncementsTree() {
     '/api/regions',
     fetcher
   );
-  const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
-  const [selectedProvince, setSelectedProvince] = useState<number | null>(null);
+const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
+const [selectedProvince, setSelectedProvince] = useState<number | null>(null);
+
+useEffect(() => {
+  const savedRegion = localStorage.getItem('selectedRegion');
+  const savedProvince = localStorage.getItem('selectedProvince');
+
+  if (savedRegion) setSelectedRegion(parseInt(savedRegion));
+  if (savedProvince) setSelectedProvince(parseInt(savedProvince));
+}, []);
+
 
   if (regionsError) return <div>Errore caricamento regioni.</div>;
   if (!regions) return <div>Caricamento regioni...</div>;
@@ -62,7 +71,10 @@ export default function AnnouncementsTree() {
           onClick={() => {
             setSelectedRegion(null);
             setSelectedProvince(null);
+            localStorage.removeItem('selectedRegion');
+            localStorage.removeItem('selectedProvince');
           }}
+
         >
           Italia
         </button>
@@ -93,13 +105,22 @@ export default function AnnouncementsTree() {
         <RegionList
           regions={regions}
           selected={selectedRegion}
-          onSelect={setSelectedRegion}
+          onSelect={(id) => {
+          setSelectedRegion(id);
+          localStorage.setItem('selectedRegion', id.toString());
+          localStorage.removeItem('selectedProvince'); // resetta la provincia
+        }}
+
         />
       ) : selectedProvince === null ? (
         <ProvinceList
           regionId={selectedRegion}
           selected={selectedProvince}
-          onSelect={setSelectedProvince}
+          onSelect={(id) => {
+          setSelectedProvince(id);
+          localStorage.setItem('selectedProvince', id.toString());
+        }}
+
         />
       ) : (
         <PostList provinceId={selectedProvince!} />
