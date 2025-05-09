@@ -4,6 +4,7 @@ import useSWR, { mutate } from 'swr';
 import { fetcher } from '../lib/fetcher';
 import { supabase } from '../lib/supabase';
 import { timeAgo } from '../utils/timeAgo';
+import Link from 'next/link';
 
 // Tipi dati
 export type Region = { id: number; name: string };
@@ -344,8 +345,11 @@ function PostList({ provinceId }: { provinceId: number }) {
               {post.closed ? <s>{post.content}</s> : post.content}
             </span>
             <small className="ml-2 text-gray-500">
-              [{post.nickname ?? post.email}, {timeAgo(post.created_at)}]
+              [<Link href={`/messages/new?to=${post.nickname}`}>
+                <a className="text-blue-600 hover:underline">{post.nickname ?? post.email}</a>
+              </Link>, {timeAgo(post.created_at)}]
             </small>
+
             {!post.closed && userId === post.author && (
               <button
                 className="ml-2 text-red-500 text-xs hover:underline"
@@ -466,9 +470,11 @@ function CommentList({
               {postClosed ? <s>{c.content}</s> : c.content}
             </span>
             <small className="ml-2 text-gray-500">
-              [{c.nickname}, {timeAgo(c.created_at)}]
+              [<Link href={`/messages/new?to=${c.nickname}`}>
+                <a className="text-blue-600 hover:underline">{c.nickname}</a>
+              </Link>, {timeAgo(c.created_at)}]
             </small>
-
+            
             {userId === postAuthorId &&
               !postClosed &&
               !replies?.some((r: Reply) => r.comment_id === c.id) && (
