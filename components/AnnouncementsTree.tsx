@@ -415,11 +415,14 @@ function CommentList({
     fetcher
   );
 
-  const commentIds = comments?.map(c => c.id).join(',');
+  const commentIdsArray = comments?.map((c) => c.id) || [];
+  const commentIds = commentIdsArray.join(',');
+
   const { data: replies } = useSWR<Reply[]>(
-    commentIds ? `/api/comments/replies?commentIds=${commentIds}` : null,
+    commentIdsArray.length > 0 ? `/api/comments/replies?commentIds=${commentIds}` : null,
     fetcher
   );
+
 
   console.log('COMMENTS:', comments);
   const { data: session } = useSWR('user', () => supabase.auth.getUser());
