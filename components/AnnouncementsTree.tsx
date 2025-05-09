@@ -428,45 +428,51 @@ function CommentList({
   const [replying, setReplying] = useState<number | null>(null);
   const [replyText, setReplyText] = useState('');
 
-  const submitReply = async (commentId: number) => {
-    if (!replyText.trim()) return;
+const submitReply = async (commentId: number) => {
+  if (!replyText.trim()) return;
 
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const token = session?.access_token;
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
 
-      if (!token) {
-        console.error('Nessun token disponibile: utente non loggato.');
-        return;
-      }
-
-      const res = await fetch(`/api/comments/${commentId}/replies`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'include',
-        body: JSON.stringify({ content: replyText }),
-      });
-
-      if (!res.ok) {
-        const msg = await res.text();
-        console.error('Errore salvataggio risposta:', msg);
-      } else {
-        setReplying(null);
-        setReplyText('');
-        mutate(`/api/posts/${postId}/comments`);
-        if (commentIds) {
-          mutate(`/api/comments/replies?commentIds=${commentIds}`);
-        }
-      }
-    } catch (err) {
-      console.error('Errore network risposta:', err);
+    if (!token) {
+      console.error('Nessun token disponibile: utente non loggato.');
+      return;
     }
-  };
+
+    const res = await fetch(`/api/comments/${commentId}/replies`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: 'include',
+      body: JSON.stringify({ content: replyText }),
+    });
+
+    if (!res.ok) {
+      const msg = await res.text();
+      console.error('Errore salvataggio risposta:', msg);
+    } else {
+      console.log('✅ Risposta salvata con successo');
+      setReplying(null);
+      setReplyText('');
+
+      // 🔁 Ricarica i commenti e le risposte per quel post
+      await mutate(`/api/posts/${postId}/comments?limit=5`, undefined, { revalidate: true });
+
+      const commentIdsList = comments?.map(c => c.id).join(',');
+      if (commentIdsList) {
+        await mutate(`/api/comments/replies?commentIds=${commentIdsList}`, undefined, { revalidate: true });
+      }
+    }
+  } catch (err) {
+    console.error('Errore network risposta:', err);
+  }
+};
+
 
   if (error) return <div>Errore caricamento commenti.</div>;
   if (!comments) return <div>Caricamento commenti...</div>;
