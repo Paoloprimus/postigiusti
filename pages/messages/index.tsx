@@ -10,6 +10,7 @@ type Message = {
   receiver_id: string;
   content: string;
   created_at: string;
+  read: boolean;
   sender: { nickname: string };
   receiver: { nickname: string };
 };
@@ -34,6 +35,18 @@ export default function MessagesPage() {
 
       if (!error && data) {
         setMessages(data);
+
+        // 🔔 Marca come letti tutti i messaggi ricevuti non letti
+        const unreadIds = data
+          .filter((msg) => msg.receiver_id === user.id && msg.read === false)
+          .map((msg) => msg.id);
+
+        if (unreadIds.length > 0) {
+          await supabase
+            .from('messages')
+            .update({ read: true })
+            .in('id', unreadIds);
+        }
       }
     };
 
