@@ -76,7 +76,7 @@ export default function Navbar() {
 
   return (
     <nav className="bg-blue-600 text-white py-3">
-      <div className="container mx-auto px-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+      <div className="w-full px-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
         {/* Logo e titolo */}
         <div className="flex items-center gap-2">
           <Home className="w-6 h-6 text-white" />
