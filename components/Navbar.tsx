@@ -24,7 +24,6 @@ export default function Navbar() {
         fetchNickname(userIdTemp);
         fetchUnreadMessages(userIdTemp);
 
-        // 🔁 Subscription realtime su messaggi ricevuti/aggiornati
         supabase
           .channel('unread-messages')
           .on(
@@ -76,17 +75,17 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-blue-600 text-white py-4">
-      <div className="container mx-auto px-4 flex justify-between items-center">
-        {/* Brand title with Home icon */}
-        <div className="flex items-center">
-          <Home className="w-6 h-6 mr-2 text-white" />
-          <h1 className="text-xl font-bold">Posti Giusti</h1>
+    <nav className="bg-blue-600 text-white py-3">
+      <div className="container mx-auto px-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+        {/* Logo e titolo */}
+        <div className="flex items-center gap-2">
+          <Home className="w-6 h-6 text-white" />
+          <h1 className="text-xl font-bold whitespace-nowrap">Posti Giusti</h1>
         </div>
 
-        {/* Menu for authenticated users */}
+        {/* Menu visibile sempre, responsivo */}
         {user && (
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-wrap justify-start sm:justify-end gap-3 text-sm">
             <Link href="/dashboard">
               <span className="hover:underline cursor-pointer">Bacheca</span>
             </Link>
@@ -108,7 +107,10 @@ export default function Navbar() {
                 {nickname || 'Profilo'}
               </span>
             </Link>
-            <button onClick={handleSignOut} className="hover:underline cursor-pointer">
+            <button
+              onClick={handleSignOut}
+              className="hover:underline cursor-pointer"
+            >
               Esci
             </button>
           </div>
