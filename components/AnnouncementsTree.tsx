@@ -299,6 +299,8 @@ function PostList({ provinceId }: { provinceId: number }) {
   };
 
   const handleClosePost = async (postId: number) => {
+    console.log("🧪 handleClosePost chiamato per post:", postId);
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
@@ -307,6 +309,7 @@ function PostList({ provinceId }: { provinceId: number }) {
         return;
       }
       const res = await fetch(`/api/posts/close/${postId}`, {
+        console.log("✅ PATCH eseguito, risposta:", res.status);
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -319,6 +322,8 @@ function PostList({ provinceId }: { provinceId: number }) {
         console.error('Errore barratura post:', msg);
       } else {
         mutate(key);
+        console.log("🔄 mutate(key) chiamato dopo barratura");
+
       }
     } catch (err) {
       console.error('Errore network barratura:', err);
