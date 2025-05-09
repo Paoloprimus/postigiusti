@@ -15,7 +15,7 @@ export default function Layout({ children, title = 'Posti Giusti' }: LayoutProps
         <title>{title}</title>
         <meta name="description" content="Piattaforma di scambio info su alloggi arredati per lavoratori precari" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
       </Head>
       <Navbar />
       <main className="container mx-auto px-4 py-8">
