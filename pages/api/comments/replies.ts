@@ -20,8 +20,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { data, error } = await supabase
-    .from('replies')
-    .select('id, comment_id, content, author, nickname, created_at')
+    .from('replies_with_authors') // ⬅️ cambia solo questo nome
+    .select('*')
     .in('comment_id', idsArray)
     .order('created_at', { ascending: true });
 
