@@ -309,7 +309,7 @@ function PostList({ provinceId }: { provinceId: number }) {
         return;
       }
       const res = await fetch(`/api/posts/close/${postId}`, {
-        console.log("✅ PATCH eseguito, risposta:", res.status);
+
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -317,6 +317,7 @@ function PostList({ provinceId }: { provinceId: number }) {
         },
         credentials: 'include',
       });
+          console.log("✅ PATCH eseguito, risposta:", res.status);
       if (!res.ok) {
         const msg = await res.text();
         console.error('Errore barratura post:', msg);
