@@ -13,13 +13,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { id } = req.query;
   const numericId = Number(id);
+
   if (isNaN(numericId)) {
     return res.status(400).json({ error: 'ID non valido' });
   }
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const token = req.headers.authorization?.replace('Bearer ', '');
 
-  // 🔁 Fase 1: aggiornamento
+  if (!token) {
+    return res.status(401).json({ error: 'Token mancante' });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  });
+
   const { error: updateError } = await supabase
     .from('posts')
     .update({ closed: true })
@@ -30,7 +42,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Errore durante update' });
   }
 
-  // 🔍 Fase 2: verifica
   const { data, error: fetchError } = await supabase
     .from('posts')
     .select('id, closed')
