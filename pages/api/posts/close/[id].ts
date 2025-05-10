@@ -12,20 +12,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { id } = req.query;
-  console.log('👉 id ricevuto dalla route:', id, '→ numero:', Number(id));
+  const numericId = Number(id);
+  if (isNaN(numericId)) {
+    return res.status(400).json({ error: 'ID non valido' });
+  }
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+  // 🔁 Fase 1: aggiornamento
   const { error: updateError } = await supabase
     .from('posts')
     .update({ closed: true })
-    .eq('id', Number(id));
+    .eq('id', numericId);
 
   if (updateError) {
-    console.error('❌ Errore durante l\'aggiornamento:', updateError);
-    return res.status(500).json({ error: 'Errore durante la barratura del post' });
+    console.error('❌ Errore durante update:', updateError);
+    return res.status(500).json({ error: 'Errore durante update' });
   }
 
-  console.log('✅ Post aggiornato con successo in Supabase');
-  return res.status(200).json({ message: 'Post barrato con successo' });
+  // 🔍 Fase 2: verifica
+  const { data, error: fetchError } = await supabase
+    .from('posts')
+    .select('id, closed')
+    .eq('id', numericId)
+    .single();
+
+  if (fetchError) {
+    console.error('❌ Errore nel recupero:', fetchError);
+    return res.status(500).json({ error: 'Errore nella lettura post' });
+  }
+
+  console.log('📦 Post aggiornato:', data);
+  return res.status(200).json({ message: 'Post barrato', updated: data });
 }
