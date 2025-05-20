@@ -98,7 +98,7 @@ export default function AdminDashboard() {
 
     const { error } = await supabase
       .from('sponsor_announcements')
-      .upsert([insertData], { onConflict: ['country', 'region', 'province'] });
+      .upsert([insertData], { onConflict: 'country,region,province' });
 
     if (error) {
       setMessage('❌ Errore: ' + error.message);
