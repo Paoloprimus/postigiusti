@@ -129,7 +129,7 @@ export default function ProfilePage() {
           {myPosts.length > 0 ? (
             <div className="space-y-4">
               {myPosts.map(post => (
-                <ListingCard key={post.id} post={post} />
+                <ListingCard key={post.id} listing={post} />
               ))}
             </div>
           ) : (
