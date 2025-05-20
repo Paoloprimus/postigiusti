@@ -206,6 +206,12 @@ function ProvinceCrumb({
 function PostList({ provinceId }: { provinceId: number }) {
   const key = `/api/provinces/${provinceId}/posts?limit=5`;
   const { data: posts, error } = useSWR<Post[]>(key, fetcher);
+  const { data: provinces } = useSWR<Province[]>(
+    `/api/regions/${regionId}/provinces`,
+    fetcher
+  );
+  const provinceName = provinces?.find(p => p.id === provinceId)?.name;
+
   const { data: session } = useSWR('user', () => supabase.auth.getUser());
   const userId = session?.data?.user?.id;
   console.log('POSTS:', posts);
