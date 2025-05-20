@@ -261,7 +261,7 @@ export function PostList({
 }) {
 
   const key = `/api/provinces/${provinceId}/posts?limit=5`;
-
+  const { data: posts, error } = useSWR<Post[]>(key, fetcher);
 
   const { data: session } = useSWR('user', () => supabase.auth.getUser());
   const userId = session?.data?.user?.id;
