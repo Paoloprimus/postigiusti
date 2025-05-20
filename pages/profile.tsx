@@ -119,7 +119,7 @@ export default function ProfilePage() {
 
         {/* LINK INVITA UN AMICO */}
         <section>
-          <h2 className="text-xl font-semibold mb-2">Invita un amico</h2>
+          <h2 className="text-xl font-semibold mb-2">Invita un amico (max 3 inviti)</h2>
           <a href="/generate-invite" className="text-blue-600 underline">
             Vai alla pagina di invito
           </a>
