@@ -231,18 +231,25 @@ export function PostList({ provinceId, regionId }: { provinceId: number; regionI
   useEffect(() => {
     if (!provinceName) return;
 
-  const fetchSponsor = async () => {
-    const { data, error } = await supabase
-      .from('sponsor_announcements')
-      .select('text, link')
-      .eq('active', true)
-      .in('province', [provinceName, null])
-      .in('region', [regionName, null])
-      .in('country', ['IT', null])
-      .order('province', { ascending: false })
-      .order('region', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+  const { data, error } = await supabase
+    .from('sponsor_announcements')
+    .select('text, link')
+    .eq('active', true)
+    .eq('province', 'Verona')
+    .maybeSingle();
+
+  //const fetchSponsor = async () => {
+   // const { data, error } = await supabase
+      //.from('sponsor_announcements')
+      //.select('text, link')
+      //.eq('active', true)
+      //.in('province', [provinceName, null])
+      //.in('region', [regionName, null])
+      //.in('country', ['IT', null])
+      //.order('province', { ascending: false })
+      //.order('region', { ascending: false })
+      //.limit(1)
+      //.maybeSingle();
   
     if (error) {
       console.error('Errore caricamento sponsor:', error);
