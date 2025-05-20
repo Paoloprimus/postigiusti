@@ -230,47 +230,76 @@ export function PostList({ provinceId, regionId }: { provinceId: number; regionI
   useEffect(() => {
     if (!provinceName) return;
 
+  const fetchSponsor = async () => {
     console.log('🧪 Filtro sponsor:', { provinceName, regionName });
-
-    const fetchSponsor = async () => {
-      console.log('🧪 Filtro sponsor:', { provinceName, regionName });
-    
-      const clauses = [];
-    
-      if (provinceName) {
-        clauses.push(`province.eq.${provinceName}`);
-      }
-    
-      if (regionName && !provinceName) {
-        clauses.push(`and(region.eq.${regionName},province.is.null)`);
-      }
-    
-      if (!regionName && !provinceName) {
-        clauses.push(`and(country.eq.IT,region.is.null,province.is.null)`);
-      }
-    
-      // Fallback sempre incluso
-      clauses.push(`and(country.is.null,region.is.null,province.is.null)`);
-    
-      const orClause = clauses.join(',');
-    
-      const { data, error } = await supabase
+  
+    let result = null;
+  
+    // 1. Sponsor per provincia
+    if (provinceName) {
+      const { data } = await supabase
         .from('sponsor_announcements')
         .select('text, link')
         .eq('active', true)
-        .or(orClause)
-        .order('province', { ascending: false })
-        .order('region', { ascending: false })
+        .eq('province', provinceName)
         .limit(1)
         .maybeSingle();
-    
-      if (error) {
-        console.error('❌ Errore caricamento sponsor:', error);
-      } else {
-        console.log('✅ Sponsor data:', data);
-        setSponsor(data);
-      }
-    };
+  
+      if (data) result = data;
+    }
+  
+    // 2. Sponsor per regione (solo se non già trovato)
+    if (!result && regionName) {
+      const { data } = await supabase
+        .from('sponsor_announcements')
+        .select('text, link')
+        .eq('active', true)
+        .eq('region', regionName)
+        .is('province', null)
+        .limit(1)
+        .maybeSingle();
+  
+      if (data) result = data;
+    }
+  
+    // 3. Sponsor nazionale (solo se non già trovato)
+    if (!result) {
+      const { data } = await supabase
+        .from('sponsor_announcements')
+        .select('text, link')
+        .eq('active', true)
+        .eq('country', 'IT')
+        .is('region', null)
+        .is('province', null)
+        .limit(1)
+        .maybeSingle();
+  
+      if (data) result = data;
+    }
+  
+    // 4. Fallback assoluto (tutti null)
+    if (!result) {
+      const { data } = await supabase
+        .from('sponsor_announcements')
+        .select('text, link')
+        .is('country', null)
+        .is('region', null)
+        .is('province', null)
+        .limit(1)
+        .maybeSingle();
+  
+      if (data) result = data;
+    }
+  
+    if (result) {
+      console.log('✅ Sponsor trovato:', result);
+      setSponsor(result);
+    } else {
+      console.log('❌ Nessuno sponsor trovato');
+      setSponsor(null);
+    }
+  };
+
 
     fetchSponsor();
   }, [provinceName, regionName]);
