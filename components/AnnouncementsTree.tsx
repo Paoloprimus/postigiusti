@@ -212,7 +212,6 @@ function ProvinceCrumb({
 }
 
 export function PostList({ provinceId, regionId }: { provinceId: number; regionId: number }) {
-
   const key = `/api/provinces/${provinceId}/posts?limit=5`;
   const { data: posts, error } = useSWR<Post[]>(key, fetcher);
   const [sponsor, setSponsor] = useState<{ text: string; link: string | null } | null>(null);
@@ -231,33 +230,22 @@ export function PostList({ provinceId, regionId }: { provinceId: number; regionI
   useEffect(() => {
     if (!provinceName) return;
 
-  const { data, error } = await supabase
-    .from('sponsor_announcements')
-    .select('text, link')
-    .eq('active', true)
-    .eq('province', 'Verona')
-    .maybeSingle();
+    const fetchSponsor = async () => {
+      const { data, error } = await supabase
+        .from('sponsor_announcements')
+        .select('text, link')
+        .eq('active', true)
+        .eq('province', 'Verona') // oppure usa provinceName per dinamico
+        .maybeSingle();
 
-  //const fetchSponsor = async () => {
-   // const { data, error } = await supabase
-      //.from('sponsor_announcements')
-      //.select('text, link')
-      //.eq('active', true)
-      //.in('province', [provinceName, null])
-      //.in('region', [regionName, null])
-      //.in('country', ['IT', null])
-      //.order('province', { ascending: false })
-      //.order('region', { ascending: false })
-      //.limit(1)
-      //.maybeSingle();
-  
-    if (error) {
-      console.error('Errore caricamento sponsor:', error);
-    } else {
-      console.log('✅ Sponsor data:', data);
-      setSponsor(data);
-    }
-  };
+      if (error) {
+        console.error('Errore caricamento sponsor:', error);
+      } else {
+        console.log('✅ Sponsor data:', data);
+        setSponsor(data);
+      }
+    };
+
     fetchSponsor();
   }, [provinceName, regionName]);
 
@@ -350,7 +338,7 @@ export function PostList({ provinceId, regionId }: { provinceId: number; regionI
 
   const handleClosePost = async (postId: number) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getUser();
       const token = session?.access_token;
       if (!token) return;
       const res = await fetch(`/api/posts/close/${postId}`, {
