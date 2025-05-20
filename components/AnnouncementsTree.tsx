@@ -231,22 +231,24 @@ export function PostList({ provinceId, regionId }: { provinceId: number; regionI
   useEffect(() => {
     if (!provinceName) return;
 
-    const fetchSponsor = async () => {
-      const { data, error } = await supabase
-        .from('sponsor_announcements')
-        .select('text, link')
-        .eq('active', true)
-        .or(`(province.eq.${provinceName}),(region.eq.${regionName},province.is.null),(country.eq.IT,region.is.null,province.is.null),(country.is.null,region.is.null,province.is.null)`)
-        .order('province', { ascending: false })
-        .order('region', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error) console.error('Errore caricamento sponsor:', error);
-        console.log('✅ Sponsor data:', data);
-      else setSponsor(data);
-    };
-
+  const fetchSponsor = async () => {
+    const { data, error } = await supabase
+      .from('sponsor_announcements')
+      .select('text, link')
+      .eq('active', true)
+      .or(`(province.eq.${provinceName}),(region.eq.${regionName},province.is.null),(country.eq.IT,region.is.null,province.is.null),(country.is.null,region.is.null,province.is.null)`)
+      .order('province', { ascending: false })
+      .order('region', { ascending: false })
+      .limit(1)
+      .single();
+  
+    if (error) {
+      console.error('Errore caricamento sponsor:', error);
+    } else {
+      console.log('✅ Sponsor data:', data);
+      setSponsor(data);
+    }
+  };
     fetchSponsor();
   }, [provinceName, regionName]);
 
