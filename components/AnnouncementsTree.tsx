@@ -52,10 +52,17 @@ useEffect(() => {
   const savedRegion = localStorage.getItem('selectedRegion');
   const savedProvince = localStorage.getItem('selectedProvince');
 
-  if (savedRegion) setSelectedRegion(parseInt(savedRegion));
-  if (savedProvince) setSelectedProvince(parseInt(savedProvince));
-}, []);
+  if (savedRegion) {
+    const id = parseInt(savedRegion);
+    setSelectedRegion(id);
 
+    // recupera il nome della regione e salvalo
+    const region = regions?.find(r => r.id === id);
+    if (region) localStorage.setItem('selectedRegionName', region.name);
+  }
+
+  if (savedProvince) setSelectedProvince(parseInt(savedProvince));
+}, [regions]);
 
   if (regionsError) return <div>Errore caricamento regioni.</div>;
   if (!regions) return <div>Caricamento regioni...</div>;
