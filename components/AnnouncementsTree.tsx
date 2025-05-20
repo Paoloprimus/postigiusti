@@ -5,6 +5,8 @@ import { fetcher } from '../lib/fetcher';
 import { supabase } from '../lib/supabase';
 import { timeAgo } from '../utils/timeAgo';
 import Link from 'next/link';
+import { useSponsor } from '../hooks/useSponsor';
+
 
 // Tipi dati
 export type Region = { id: number; name: string };
@@ -47,45 +49,7 @@ export default function AnnouncementsTree() {
   const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
   const [selectedProvince, setSelectedProvince] = useState<number | null>(null);
   const [sponsor, setSponsor] = useState<{ text: string; link: string | null } | null>(null);
-
-  useEffect(() => {
-    const fetchSponsor = async () => {
-      const provinceName = localStorage.getItem('selectedProvince')?.toLowerCase() ?? null;
-      const regionNameStorage = localStorage.getItem('selectedRegionName')?.toLowerCase() ?? null;
-      console.log('🧪 Filtro sponsor (da localStorage):', { provinceName, regionNameStorage });
-
-      const { data, error } = await supabase
-        .from('sponsor_announcements')
-        .select('text, link, country, region, province')
-        .eq('active', true);
-
-      if (error) {
-        console.error('❌ Errore fetch sponsor:', error);
-        setSponsor(null);
-        return;
-      }
-
-      const clean = (val: string | null) =>
-        typeof val === 'string' ? val.trim().toLowerCase() : null;
-
-      const national = data.find(
-        (s) => clean(s.country) === 'it' && !clean(s.region) && !clean(s.province)
-      );
-      if (national) return setSponsor({ text: national.text, link: national.link });
-
-      const regional = data.find(
-        (s) => clean(s.region) === regionNameStorage && !clean(s.province)
-      );
-      if (regional) return setSponsor({ text: regional.text, link: regional.link });
-
-      const local = data.find((s) => clean(s.province) === provinceName);
-      if (local) return setSponsor({ text: local.text, link: local.link });
-
-      setSponsor(null);
-    };
-
-    fetchSponsor();
-  }, [selectedProvince, selectedRegion]);
+  const sponsor = useSponsor();
 
   useEffect(() => {
     const savedRegion = localStorage.getItem('selectedRegion');
