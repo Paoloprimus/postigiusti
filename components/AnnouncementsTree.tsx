@@ -47,10 +47,15 @@ export default function AnnouncementsTree() {
   );
 const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
 const [selectedProvince, setSelectedProvince] = useState<number | null>(null);
+const [sponsor, setSponsor] = useState<{ text: string; link: string | null } | null>(null); // se non c'è già, aggiungila
 
+// ⬇️ INCOLLA QUI
+const regionName = localStorage.getItem('selectedRegionName')?.toLowerCase() ?? null;
+const provinceName = localStorage.getItem('selectedProvince')?.toLowerCase() ?? null;
+  
   useEffect(() => {
   const fetchSponsor = async () => {
-    console.log('🧪 Filtro sponsor:', { provinceName, regionName });
+    console.log('🧪 Filtro sponsor (da localStorage):', { provinceName, regionName });
 
     const { data, error } = await supabase
       .from('sponsor_announcements')
@@ -66,13 +71,7 @@ const [selectedProvince, setSelectedProvince] = useState<number | null>(null);
     const clean = (val: string | null) =>
       typeof val === 'string' ? val.trim().toLowerCase() : null;
 
-    const regionName = localStorage.getItem('selectedRegionName')?.toLowerCase() ?? null;
-    const provinceName = (() => {
-      const provinceId = localStorage.getItem('selectedProvince');
-      const provinceList = data.map(d => d.province).filter(Boolean);
-      const match = provinceList.find(p => p?.toLowerCase() === provinceId);
-      return match ?? null;
-    })();
+
 
     // 1. nazionale
     const national = data.find(
