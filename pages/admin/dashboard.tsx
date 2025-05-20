@@ -1,5 +1,112 @@
 // pages/admin/dashboard.tsx
 
+import { useState } from 'react';
+import { supabase } from '../lib/supabase'; // correggi il path se necessario
+
+export default function AdminDashboard() {
+  const [level, setLevel] = useState<'national' | 'region' | 'province'>('national');
+  const [country, setCountry] = useState('IT');
+  const [region, setRegion] = useState('');
+  const [province, setProvince] = useState('');
+  const [text, setText] = useState('');
+  const [link, setLink] = useState('');
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = async () => {
+    if (!text.trim()) return setMessage('⚠️ Il campo testo è obbligatorio.');
+
+    const insertData: any = {
+      text,
+      link: link.trim() || null,
+      active: true,
+    };
+
+    if (level === 'national') {
+      insertData.country = country;
+    } else if (level === 'region') {
+      insertData.country = country;
+      insertData.region = region;
+    } else if (level === 'province') {
+      insertData.country = country;
+      insertData.region = region;
+      insertData.province = province;
+    }
+
+    const { error } = await supabase
+      .from('sponsor_announcements')
+      .upsert([insertData], { onConflict: ['country', 'region', 'province'] });
+
+    if (error) {
+      setMessage('❌ Errore: ' + error.message);
+    } else {
+      setMessage('✅ Annuncio salvato correttamente!');
+      setText('');
+      setLink('');
+    }
+  };
+
+  return (
+    <div className="p-4 border rounded bg-gray-50 max-w-xl">
+      <h2 className="text-lg font-bold mb-2">Gestione Annunci Sponsor</h2>
+
+      <label className="block mb-1 font-medium">Livello geografico</label>
+      <select
+        className="mb-2 border p-1 w-full"
+        value={level}
+        onChange={(e) => setLevel(e.target.value as any)}
+      >
+        <option value="national">Italia</option>
+        <option value="region">Regione</option>
+        <option value="province">Provincia</option>
+      </select>
+
+      {level !== 'national' && (
+        <>
+          <input
+            className="mb-2 border p-1 w-full"
+            placeholder="Regione es. Veneto"
+            value={region}
+            onChange={(e) => setRegion(e.target.value)}
+          />
+        </>
+      )}
+
+      {level === 'province' && (
+        <input
+          className="mb-2 border p-1 w-full"
+          placeholder="Provincia es. Verona"
+          value={province}
+          onChange={(e) => setProvince(e.target.value)}
+        />
+      )}
+
+      <textarea
+        className="mb-2 border p-1 w-full"
+        rows={3}
+        placeholder="Testo dell'annuncio (obbligatorio)"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+
+      <input
+        className="mb-2 border p-1 w-full"
+        placeholder="Link (opzionale)"
+        value={link}
+        onChange={(e) => setLink(e.target.value)}
+      />
+
+      <button
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        onClick={handleSubmit}
+      >
+        Salva annuncio
+      </button>
+
+      {message && <p className="mt-2 text-sm">{message}</p>}
+    </div>
+  );
+}
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '../../lib/supabase';
