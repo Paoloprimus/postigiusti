@@ -242,7 +242,7 @@ export function PostList({ provinceId, regionId }: { provinceId: number; regionI
       .order('province', { ascending: false })
       .order('region', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
   
     if (error) {
       console.error('Errore caricamento sponsor:', error);
