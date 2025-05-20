@@ -16,18 +16,18 @@ export type Post = {
   created_at: string;
   province_id: number;
   type: 'cerco' | 'offro';
-  nickname?: string;  // 🔵 aggiunto qui
-  email?: string;     // 🔵 aggiunto qui
+  nickname?: string;
+  email?: string;
   closed?: boolean;
 };
 
 export type CommentWithAuthor = {
   id: number;
-  post_id: number;    // 🔵 aggiungiamo post_id che vediamo nei dati veri
+  post_id: number;
   content: string;
   created_at: string;
-  author: string;     // 🔵 aggiungiamo anche author
-  nickname?: string;  // 🔵 nickname ora è diretto
+  author: string;
+  nickname?: string;
 };
 
 export type Reply = {
@@ -39,76 +39,68 @@ export type Reply = {
   created_at: string;
 };
 
-
 export default function AnnouncementsTree() {
   const { data: regions, error: regionsError } = useSWR<Region[]>(
     '/api/regions',
     fetcher
   );
-const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
-const [selectedProvince, setSelectedProvince] = useState<number | null>(null);
-const [sponsor, setSponsor] = useState<{ text: string; link: string | null } | null>(null); // se non c'è già, aggiungila
+  const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
+  const [selectedProvince, setSelectedProvince] = useState<number | null>(null);
+  const [sponsor, setSponsor] = useState<{ text: string; link: string | null } | null>(null);
 
-// ⬇️ INCOLLA QUI
-const regionNameStorage = localStorage.getItem('selectedRegionName')?.toLowerCase() ?? null;
-const provinceName = localStorage.getItem('selectedProvince')?.toLowerCase() ?? null;
-  
   useEffect(() => {
-  const fetchSponsor = async () => {
-    console.log('🧪 Filtro sponsor (da localStorage):', { provinceName, regionName });
+    const fetchSponsor = async () => {
+      const provinceName = localStorage.getItem('selectedProvince')?.toLowerCase() ?? null;
+      const regionNameStorage = localStorage.getItem('selectedRegionName')?.toLowerCase() ?? null;
+      console.log('🧪 Filtro sponsor (da localStorage):', { provinceName, regionNameStorage });
 
-    const { data, error } = await supabase
-      .from('sponsor_announcements')
-      .select('text, link, country, region, province')
-      .eq('active', true);
+      const { data, error } = await supabase
+        .from('sponsor_announcements')
+        .select('text, link, country, region, province')
+        .eq('active', true);
 
-    if (error) {
-      console.error('❌ Errore fetch sponsor:', error);
+      if (error) {
+        console.error('❌ Errore fetch sponsor:', error);
+        setSponsor(null);
+        return;
+      }
+
+      const clean = (val: string | null) =>
+        typeof val === 'string' ? val.trim().toLowerCase() : null;
+
+      const national = data.find(
+        (s) => clean(s.country) === 'it' && !clean(s.region) && !clean(s.province)
+      );
+      if (national) return setSponsor({ text: national.text, link: national.link });
+
+      const regional = data.find(
+        (s) => clean(s.region) === regionNameStorage && !clean(s.province)
+      );
+      if (regional) return setSponsor({ text: regional.text, link: regional.link });
+
+      const local = data.find((s) => clean(s.province) === provinceName);
+      if (local) return setSponsor({ text: local.text, link: local.link });
+
       setSponsor(null);
-      return;
+    };
+
+    fetchSponsor();
+  }, [selectedProvince, selectedRegion]);
+
+  useEffect(() => {
+    const savedRegion = localStorage.getItem('selectedRegion');
+    const savedProvince = localStorage.getItem('selectedProvince');
+
+    if (savedRegion) {
+      const id = parseInt(savedRegion);
+      setSelectedRegion(id);
+
+      const region = regions?.find(r => r.id === id);
+      if (region) localStorage.setItem('selectedRegionName', region.name);
     }
 
-    const clean = (val: string | null) =>
-      typeof val === 'string' ? val.trim().toLowerCase() : null;
-
-    // 1. nazionale
-    const national = data.find(
-      (s) => clean(s.country) === 'it' && !clean(s.region) && !clean(s.province)
-    );
-    if (national) return setSponsor({ text: national.text, link: national.link });
-
-    // 2. regionale
-    const regional = data.find(
-      (s) => clean(s.region) === regionNameStorage && !clean(s.province)
-    );
-    if (regional) return setSponsor({ text: regional.text, link: regional.link });
-
-    // 3. provinciale
-    const local = data.find((s) => clean(s.province) === provinceName);
-    if (local) return setSponsor({ text: local.text, link: local.link });
-
-    // 4. fallback
-    setSponsor(null);
-  };
-
-  fetchSponsor();
-}, [selectedProvince, selectedRegion]);
-
-useEffect(() => {
-  const savedRegion = localStorage.getItem('selectedRegion');
-  const savedProvince = localStorage.getItem('selectedProvince');
-
-  if (savedRegion) {
-    const id = parseInt(savedRegion);
-    setSelectedRegion(id);
-
-    // recupera il nome della regione e salvalo
-    const region = regions?.find(r => r.id === id);
-    if (region) localStorage.setItem('selectedRegionName', region.name);
-  }
-
-  if (savedProvince) setSelectedProvince(parseInt(savedProvince));
-}, [regions]);
+    if (savedProvince) setSelectedProvince(parseInt(savedProvince));
+  }, [regions]);
 
   if (regionsError) return <div>Errore caricamento regioni.</div>;
   if (!regions) return <div>Caricamento regioni...</div>;
@@ -127,7 +119,6 @@ useEffect(() => {
             localStorage.removeItem('selectedRegion');
             localStorage.removeItem('selectedProvince');
           }}
-
         >
           Italia
         </button>
@@ -159,35 +150,31 @@ useEffect(() => {
           regions={regions}
           selected={selectedRegion}
           onSelect={(id) => {
-          setSelectedRegion(id);
-          localStorage.setItem('selectedRegion', id.toString());
-          localStorage.removeItem('selectedProvince'); // resetta la provincia
-        }}
-
+            setSelectedRegion(id);
+            localStorage.setItem('selectedRegion', id.toString());
+            localStorage.removeItem('selectedProvince');
+          }}
         />
       ) : selectedProvince === null ? (
         <ProvinceList
           regionId={selectedRegion}
           selected={selectedProvince}
           onSelect={(id) => {
-          setSelectedProvince(id);
-          localStorage.setItem('selectedProvince', id.toString());
-        }}
-
+            setSelectedProvince(id);
+            localStorage.setItem('selectedProvince', id.toString());
+          }}
         />
       ) : (
-
-      <PostList
-        provinceId={selectedProvince}
-        regionId={selectedRegion}
-        sponsor={sponsor}
-      />
-
-
+        <PostList
+          provinceId={selectedProvince}
+          regionId={selectedRegion}
+          sponsor={sponsor}
+        />
       )}
     </div>
   );
 }
+
 
 function RegionList({
   regions,
