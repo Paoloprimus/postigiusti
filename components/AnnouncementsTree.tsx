@@ -241,6 +241,34 @@ function PostList({ provinceId }: { provinceId: number }) {
     if (creatingType && inputRef.current) inputRef.current.focus();
   }, [creatingType]);
 
+
+  useEffect(() => {
+    const fetchSponsor = async () => {
+      const { data, error } = await supabase
+        .from('sponsor_announcements')
+        .select('text, link')
+        .eq('active', true)
+        .or(`
+          (province.eq.Verona),
+          (region.eq.Veneto, province.is.null),
+          (country.eq.IT, region.is.null, province.is.null),
+          (country.is.null, region.is.null, province.is.null)
+        `)
+        .order('province', { ascending: false })
+        .order('region', { ascending: false })
+        .limit(1)
+        .single();
+  
+      if (error) console.error('Errore caricamento sponsor:', error);
+      else setSponsor(data);
+    };
+  
+    fetchSponsor();
+  }, []);
+
+
+
+  
   useEffect(() => {
     const checkSession = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
@@ -340,6 +368,17 @@ function PostList({ provinceId }: { provinceId: number }) {
 
   return (
     <ul className="pl-8 space-y-2">
+      {sponsor && sponsor.text && (
+        <li className="text-sm uppercase font-semibold text-indigo-700">
+          {sponsor.link ? (
+            <a href={sponsor.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
+              {sponsor.text}
+            </a>
+          ) : (
+            <div>{sponsor.text}</div>
+          )}
+        </li>
+      )}
       <li className="space-x-4">
         <button className="text-green-700 hover:underline text-sm" onClick={() => setCreatingType('offro')}>+ OFFRO</button>
         <button className="text-orange-500 hover:underline text-sm" onClick={() => setCreatingType('cerco')}>+ CERCO</button>
