@@ -123,7 +123,8 @@ useEffect(() => {
 
         />
       ) : (
-        <PostList provinceId={selectedProvince!} />
+        <PostList provinceId={selectedProvince!} regionId={selectedRegion!} />
+
       )}
     </div>
   );
@@ -203,9 +204,48 @@ function ProvinceCrumb({
   ) : null;
 }
 
-function PostList({ provinceId }: { provinceId: number }) {
+function PostList({ provinceId, regionId }: { provinceId: number; regionId: number }) {
   const key = `/api/provinces/${provinceId}/posts?limit=5`;
   const { data: posts, error } = useSWR<Post[]>(key, fetcher);
+  const [sponsor, setSponsor] = useState<{ text: string; link: string | null } | null>(null);
+
+  const { data: provinces } = useSWR<Province[]>(
+    `/api/regions/${regionId}/provinces`,
+    fetcher
+  );
+  const provinceName = provinces?.find(p => p.id === provinceId)?.name;
+  
+  const regionName = (() => {
+    const saved = localStorage.getItem('selectedRegionName');
+    return saved ? saved : '';
+  })();
+  
+  useEffect(() => {
+    if (!provinceName) return;
+  
+    const fetchSponsor = async () => {
+      const { data, error } = await supabase
+        .from('sponsor_announcements')
+        .select('text, link')
+        .eq('active', true)
+        .or(`
+          (province.eq.${provinceName}),
+          (region.eq.${regionName}, province.is.null),
+          (country.eq.IT, region.is.null, province.is.null),
+          (country.is.null, region.is.null, province.is.null)
+        `)
+        .order('province', { ascending: false })
+        .order('region', { ascending: false })
+        .limit(1)
+        .single();
+  
+      if (error) console.error('Errore caricamento sponsor:', error);
+      else setSponsor(data);
+    };
+  
+    fetchSponsor();
+  }, [provinceName, regionName]);
+
   const { data: provinces } = useSWR<Province[]>(
     `/api/regions/${regionId}/provinces`,
     fetcher
@@ -271,9 +311,6 @@ function PostList({ provinceId }: { provinceId: number }) {
   
     fetchSponsor();
   }, []);
-
-
-
   
   useEffect(() => {
     const checkSession = async () => {
@@ -374,17 +411,18 @@ function PostList({ provinceId }: { provinceId: number }) {
 
   return (
     <ul className="pl-8 space-y-2">
-      {sponsor && sponsor.text && (
-        <li className="text-sm uppercase font-semibold text-indigo-700">
-          {sponsor.link ? (
-            <a href={sponsor.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
-              {sponsor.text}
-            </a>
-          ) : (
-            <div>{sponsor.text}</div>
-          )}
-        </li>
-      )}
+    {sponsor?.text && (
+      <li className="text-sm uppercase font-semibold text-indigo-700">
+        {sponsor.link ? (
+          <a href={sponsor.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
+            {sponsor.text}
+          </a>
+        ) : (
+          <div>{sponsor.text}</div>
+        )}
+      </li>
+    )}
+
       <li className="space-x-4">
         <button className="text-green-700 hover:underline text-sm" onClick={() => setCreatingType('offro')}>+ OFFRO</button>
         <button className="text-orange-500 hover:underline text-sm" onClick={() => setCreatingType('cerco')}>+ CERCO</button>
