@@ -4,7 +4,6 @@ import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
-// Definiamo un'interfaccia locale invece di usare quella importata
 interface LocalInvite {
   id: string;
   token: string;
@@ -37,17 +36,16 @@ export default function GenerateInvite() {
       setLoading(false);
       return;
     }
-    
+
     try {
       const { data, error } = await supabase
         .from('invites')
         .select('*')
         .eq('invited_by', session.user.id)
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
-      
-      // Trasformiamo manualmente i dati ricevuti
+
       const typedInvites: LocalInvite[] = (data || []).map(item => ({
         id: item.id,
         token: item.token,
@@ -55,16 +53,16 @@ export default function GenerateInvite() {
         invited_by: item.invited_by,
         approved_by: item.approved_by,
         used_by: item.used_by,
-        approved: !!item.approved, // Force boolean
-        used: !!item.used, // Force boolean
+        approved: !!item.approved,
+        used: !!item.used,
         created_at: item.created_at
       }));
-      
+
       setInvites(typedInvites);
     } catch (err) {
       console.error('Error fetching invites:', err);
     }
-    
+
     setLoading(false);
   };
 
@@ -73,29 +71,26 @@ export default function GenerateInvite() {
     setGenerating(true);
     setError('');
     setSuccess('');
-  
+
     if (!email.trim()) {
       setError('Devi specificare un’email per generare l’invito.');
       setGenerating(false);
       return;
     }
-  
+
     try {
-      // Ottieni il token di sessione da Supabase
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('Sessione non valida');
       }
-  
-      // Verifica limite inviti pendenti
+
       const pendingCount = invites.filter(i => !i.used && !i.approved).length;
       if (pendingCount >= 3) {
         setError('Hai già 3 inviti in sospeso/non usati');
         setGenerating(false);
         return;
       }
-  
-      // Chiamata all'API backend /api/invites passando il token JWT
+
       const response = await fetch('/api/invites', {
         method: 'POST',
         headers: {
@@ -104,20 +99,24 @@ export default function GenerateInvite() {
         },
         body: JSON.stringify({ email }),
       });
-      
+
       let result;
       try {
         result = await response.json();
       } catch {
         result = { error: 'Risposta non valida dal server (nessun JSON)' };
       }
-      
+
       if (!response.ok) {
-        throw new Error(result.error || 'Errore dal server');
+        if (response.status === 403) {
+          setError('Hai già generato il numero massimo di 3 inviti.');
+        } else {
+          setError(result.error || 'Errore dal server');
+        }
+        setGenerating(false);
+        return;
       }
 
-  
-      // Aggiungi l'invito localmente
       const typedNewInvite: LocalInvite = {
         id: result.id,
         token: result.token,
@@ -129,7 +128,7 @@ export default function GenerateInvite() {
         used: !!result.used,
         created_at: result.created_at
       };
-  
+
       setInvites([typedNewInvite, ...invites]);
       setSuccess('Invito generato con successo!');
       setEmail('');
@@ -137,10 +136,9 @@ export default function GenerateInvite() {
       console.error('Errore generazione invito:', err);
       setError(err.message || 'Errore durante la generazione dell\'invito');
     }
-  
+
     setGenerating(false);
   };
-
 
   const copyInviteLink = (token: string) => {
     const link = `${window.location.origin}/signup?token=${token}`;
@@ -149,6 +147,9 @@ export default function GenerateInvite() {
       .catch(() => setCopySuccess('Errore copia link'));
     setTimeout(() => setCopySuccess(''), 2000);
   };
+
+  const pendingCount = invites.filter(i => !i.used && !i.approved).length;
+  const hasReachedLimit = pendingCount >= 3;
 
   return (
     <Layout title="AlloggiPrecari - Genera invito">
@@ -176,6 +177,7 @@ export default function GenerateInvite() {
               className="w-full border rounded px-3 py-2"
               placeholder="email@esempio.com"
               required
+              disabled={hasReachedLimit}
             />
             <p className="text-xs text-gray-500 mt-1">
               L’invito sarà valido solo per questa email
@@ -183,12 +185,17 @@ export default function GenerateInvite() {
           </div>
           <button
             type="submit"
-            disabled={generating}
+            disabled={generating || hasReachedLimit}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
           >
             {generating ? 'Generazione in corso...' : 'Genera invito'}
           </button>
         </form>
+        {hasReachedLimit && (
+          <p className="text-sm text-red-500 mt-2">
+            Hai già utilizzato tutti e 3 gli inviti disponibili.
+          </p>
+        )}
       </div>
 
       <div>
