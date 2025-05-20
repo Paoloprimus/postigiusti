@@ -88,6 +88,7 @@ export default function ProfilePage() {
   }
 
   const user = session.user;
+  const nickname = user.user_metadata?.nickname || '—';
 
   return (
     <Layout>
@@ -98,7 +99,7 @@ export default function ProfilePage() {
           <h2 className="text-xl font-semibold mb-2">Dati personali</h2>
           <div className="bg-gray-100 p-4 rounded">
             <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>ID Utente:</strong> {user.id}</p>
+            <p><strong>Nickname:</strong> {nickname}</p>
             <p><strong>Data iscrizione:</strong> {new Date(user.created_at!).toLocaleDateString()}</p>
           </div>
         </section>
