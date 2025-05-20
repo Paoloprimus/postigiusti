@@ -6,8 +6,6 @@ import { supabase } from '../lib/supabase';
 import { timeAgo } from '../utils/timeAgo';
 import Link from 'next/link';
 
-const [sponsor, setSponsor] = useState<{ text: string; link: string | null } | null>(null);
-
 // Tipi dati
 export type Region = { id: number; name: string };
 export type Province = { id: number; name: string };
@@ -268,89 +266,18 @@ function ProvinceCrumb({
   ) : null;
 }
 
-export function PostList({ provinceId, regionId }: { provinceId: number; regionId: number }) {
+export function PostList({
+  provinceId,
+  regionId,
+  sponsor,
+}: {
+  provinceId: number;
+  regionId: number;
+  sponsor: { text: string; link: string | null } | null;
+}) {
+
   const key = `/api/provinces/${provinceId}/posts?limit=5`;
-  const { data: posts, error } = useSWR<Post[]>(key, fetcher);
-  const [sponsor, setSponsor] = useState<{ text: string; link: string | null } | null>(null);
 
-  const { data: provinces } = useSWR<Province[]>(
-    `/api/regions/${regionId}/provinces`,
-    fetcher
-  );
-  const provinceName = provinces?.find(p => p.id === provinceId)?.name;
-
-  const regionName = (() => {
-    const saved = localStorage.getItem('selectedRegionName');
-    return saved ? saved : '';
-  })();
-
-  useEffect(() => {
-    if (!provinceName) return;
-
-const fetchSponsor = async () => {
-  console.log('🧪 Filtro sponsor:', { provinceName, regionName });
-
-  const { data, error } = await supabase
-    .from('sponsor_announcements')
-    .select('text, link, country, region, province')
-    .eq('active', true);
-
-  if (error) {
-    console.error('❌ Errore fetch sponsor:', error);
-    setSponsor(null);
-    return;
-  }
-
-  const clean = (val: string | null) =>
-    typeof val === 'string' ? val.trim().toLowerCase() : null;
-
-  const region = clean(regionName);
-  const province = clean(provinceName);
-
-  const national = data.find(
-    (s) =>
-      clean(s.country) === 'it' &&
-      clean(s.region) === null &&
-      clean(s.province) === null
-  );
-
-  if (national) {
-    console.log('✅ Sponsor nazionale:', national);
-    setSponsor({ text: national.text, link: national.link });
-    return;
-  }
-
-  const regional = data.find(
-    (s) =>
-      clean(s.region) === region &&
-      clean(s.province) === null
-  );
-
-  if (regional) {
-    console.log('✅ Sponsor regionale:', regional);
-    setSponsor({ text: regional.text, link: regional.link });
-    return;
-  }
-
-  const local = data.find(
-    (s) => clean(s.province) === province
-  );
-
-  if (local) {
-    console.log('✅ Sponsor provinciale:', local);
-    setSponsor({ text: local.text, link: local.link });
-    return;
-  }
-
-  console.log('⚠️ Nessuno sponsor disponibile');
-  setSponsor(null);
-};
-
-
-
-
-    fetchSponsor();
-  }, [provinceName, regionName]);
 
   const { data: session } = useSWR('user', () => supabase.auth.getUser());
   const userId = session?.data?.user?.id;
