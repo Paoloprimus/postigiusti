@@ -293,31 +293,6 @@ function PostList({ provinceId, regionId }: { provinceId: number; regionId: numb
   useEffect(() => {
     if (creatingType && inputRef.current) inputRef.current.focus();
   }, [creatingType]);
-
-
-  useEffect(() => {
-    const fetchSponsor = async () => {
-      const { data, error } = await supabase
-        .from('sponsor_announcements')
-        .select('text, link')
-        .eq('active', true)
-        .or(`
-          (province.eq.Verona),
-          (region.eq.Veneto, province.is.null),
-          (country.eq.IT, region.is.null, province.is.null),
-          (country.is.null, region.is.null, province.is.null)
-        `)
-        .order('province', { ascending: false })
-        .order('region', { ascending: false })
-        .limit(1)
-        .single();
-  
-      if (error) console.error('Errore caricamento sponsor:', error);
-      else setSponsor(data);
-    };
-  
-    fetchSponsor();
-  }, []);
   
   useEffect(() => {
     const checkSession = async () => {
@@ -413,8 +388,6 @@ function PostList({ provinceId, regionId }: { provinceId: number; regionId: numb
 
   if (error) return <div>Errore caricamento post.</div>;
   if (!posts) return <div>Caricamento post...</div>;
-
-  const [sponsor, setSponsor] = useState<{ text: string; link: string | null } | null>(null);
 
   return (
     <ul className="pl-8 space-y-2">
