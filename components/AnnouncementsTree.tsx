@@ -247,6 +247,7 @@ function PostList({ provinceId, regionId }: { provinceId: number; regionId: numb
         .single();
 
       if (error) console.error('Errore caricamento sponsor:', error);
+        console.log('✅ Sponsor data:', data);
       else setSponsor(data);
     };
 
