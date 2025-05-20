@@ -50,7 +50,7 @@ const [selectedProvince, setSelectedProvince] = useState<number | null>(null);
 const [sponsor, setSponsor] = useState<{ text: string; link: string | null } | null>(null); // se non c'è già, aggiungila
 
 // ⬇️ INCOLLA QUI
-const regionName = localStorage.getItem('selectedRegionName')?.toLowerCase() ?? null;
+const regionNameStorage = localStorage.getItem('selectedRegionName')?.toLowerCase() ?? null;
 const provinceName = localStorage.getItem('selectedProvince')?.toLowerCase() ?? null;
   
   useEffect(() => {
@@ -71,8 +71,6 @@ const provinceName = localStorage.getItem('selectedProvince')?.toLowerCase() ?? 
     const clean = (val: string | null) =>
       typeof val === 'string' ? val.trim().toLowerCase() : null;
 
-
-
     // 1. nazionale
     const national = data.find(
       (s) => clean(s.country) === 'it' && !clean(s.region) && !clean(s.province)
@@ -81,7 +79,7 @@ const provinceName = localStorage.getItem('selectedProvince')?.toLowerCase() ?? 
 
     // 2. regionale
     const regional = data.find(
-      (s) => clean(s.region) === regionName && !clean(s.province)
+      (s) => clean(s.region) === regionNameStorage && !clean(s.province)
     );
     if (regional) return setSponsor({ text: regional.text, link: regional.link });
 
