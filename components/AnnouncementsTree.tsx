@@ -221,15 +221,15 @@ function PostList({ provinceId, regionId }: { provinceId: number; regionId: numb
     fetcher
   );
   const provinceName = provinces?.find(p => p.id === provinceId)?.name;
-  
+
   const regionName = (() => {
     const saved = localStorage.getItem('selectedRegionName');
     return saved ? saved : '';
   })();
-  
+
   useEffect(() => {
     if (!provinceName) return;
-  
+
     const fetchSponsor = async () => {
       const { data, error } = await supabase
         .from('sponsor_announcements')
@@ -245,25 +245,21 @@ function PostList({ provinceId, regionId }: { provinceId: number; regionId: numb
         .order('region', { ascending: false })
         .limit(1)
         .single();
-  
+
       if (error) console.error('Errore caricamento sponsor:', error);
       else setSponsor(data);
     };
-  
+
     fetchSponsor();
   }, [provinceName, regionName]);
 
-  const provinceName = provinces?.find(p => p.id === provinceId)?.name;
-
   const { data: session } = useSWR('user', () => supabase.auth.getUser());
   const userId = session?.data?.user?.id;
-  console.log('POSTS:', posts);
   const [creatingType, setCreatingType] = useState<'cerco' | 'offro' | null>(null);
   const [newText, setNewText] = useState('');
   const [expanded, setExpanded] = useState<number[]>([]);
   const [commenting, setCommenting] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
   const clickTimers = useRef<{ [key: number]: NodeJS.Timeout }>({});
 
   const handleClick = (postId: number) => {
@@ -289,15 +285,12 @@ function PostList({ provinceId, regionId }: { provinceId: number; regionId: numb
   useEffect(() => {
     if (creatingType && inputRef.current) inputRef.current.focus();
   }, [creatingType]);
-  
+
   useEffect(() => {
     const checkSession = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error('Errore sessione Supabase:', error);
-      } else {
-        console.log('UTENTE LOGGATO:', user);
-      }
+      if (error) console.error('Errore sessione Supabase:', error);
+      else console.log('UTENTE LOGGATO:', user);
     };
     checkSession();
   }, []);
@@ -348,17 +341,11 @@ function PostList({ provinceId, regionId }: { provinceId: number; regionId: numb
   };
 
   const handleClosePost = async (postId: number) => {
-    console.log("🧪 handleClosePost chiamato per post:", postId);
-
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      if (!token) {
-        console.error('Nessun token disponibile: utente non loggato.');
-        return;
-      }
+      if (!token) return;
       const res = await fetch(`/api/posts/close/${postId}`, {
-
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -366,14 +353,11 @@ function PostList({ provinceId, regionId }: { provinceId: number; regionId: numb
         },
         credentials: 'include',
       });
-          console.log("✅ PATCH eseguito, risposta:", res.status);
       if (!res.ok) {
         const msg = await res.text();
         console.error('Errore barratura post:', msg);
       } else {
         mutate(key);
-        console.log("🔄 mutate(key) chiamato dopo barratura");
-
       }
     } catch (err) {
       console.error('Errore network barratura:', err);
@@ -387,17 +371,17 @@ function PostList({ provinceId, regionId }: { provinceId: number; regionId: numb
 
   return (
     <ul className="pl-8 space-y-2">
-    {sponsor?.text && (
-      <li className="text-sm uppercase font-semibold text-indigo-700">
-        {sponsor.link ? (
-          <a href={sponsor.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
-            {sponsor.text}
-          </a>
-        ) : (
-          <div>{sponsor.text}</div>
-        )}
-      </li>
-    )}
+      {sponsor?.text && (
+        <li className="text-sm uppercase font-semibold text-indigo-700">
+          {sponsor.link ? (
+            <a href={sponsor.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
+              {sponsor.text}
+            </a>
+          ) : (
+            <div>{sponsor.text}</div>
+          )}
+        </li>
+      )}
 
       <li className="space-x-4">
         <button className="text-green-700 hover:underline text-sm" onClick={() => setCreatingType('offro')}>+ OFFRO</button>
@@ -479,12 +463,14 @@ function PostList({ provinceId, regionId }: { provinceId: number; regionId: numb
           )}
         </li>
       ))}
+
       {posts.length === 0 && !creatingType && (
         <li className="italic text-gray-500">Ancora nessun annuncio</li>
       )}
     </ul>
   );
 }
+
 
 
 function CommentList({
