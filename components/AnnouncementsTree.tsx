@@ -253,10 +253,6 @@ function PostList({ provinceId, regionId }: { provinceId: number; regionId: numb
     fetchSponsor();
   }, [provinceName, regionName]);
 
-  const { data: provinces } = useSWR<Province[]>(
-    `/api/regions/${regionId}/provinces`,
-    fetcher
-  );
   const provinceName = provinces?.find(p => p.id === provinceId)?.name;
 
   const { data: session } = useSWR('user', () => supabase.auth.getUser());
