@@ -416,16 +416,26 @@ const fetchSponsor = async () => {
   if (error) return <div>Errore caricamento post.</div>;
   if (!posts) return <div>Caricamento post...</div>;
 
+  console.log('🎯 Sponsor in render:', sponsor);
+  console.log('📍 Provincia:', provinceName);
+  console.log('📍 Regione:', regionName);
+
   return (
     <ul className="pl-8 space-y-2">
-      {sponsor?.text && (
-        <li className="text-sm uppercase font-semibold text-indigo-700">
+      {sponsor && (
+        <li className="text-sm uppercase font-semibold text-indigo-700 bg-yellow-100 border border-yellow-500 p-2 rounded">
+          <div className="mb-1">🎯 SPONSOR ATTIVO:</div>
           {sponsor.link ? (
-            <a href={sponsor.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
+            <a
+              href={sponsor.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline text-blue-600"
+            >
               {sponsor.text}
             </a>
           ) : (
-            <div>{sponsor.text}</div>
+            <span>{sponsor.text ?? '⚠️ testo mancante'}</span>
           )}
         </li>
       )}
