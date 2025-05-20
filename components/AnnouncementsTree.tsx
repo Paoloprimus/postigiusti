@@ -366,8 +366,6 @@ export function PostList({
   if (!posts) return <div>Caricamento post...</div>;
 
   console.log('🎯 Sponsor in render:', sponsor);
-  console.log('📍 Provincia:', provinceName);
-  console.log('📍 Regione:', regionName);
 
   return (
     <ul className="pl-8 space-y-2">
