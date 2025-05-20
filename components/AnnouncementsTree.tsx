@@ -336,6 +336,8 @@ function PostList({ provinceId }: { provinceId: number }) {
   if (error) return <div>Errore caricamento post.</div>;
   if (!posts) return <div>Caricamento post...</div>;
 
+  const [sponsor, setSponsor] = useState<{ text: string; link: string | null } | null>(null);
+
   return (
     <ul className="pl-8 space-y-2">
       <li className="space-x-4">
