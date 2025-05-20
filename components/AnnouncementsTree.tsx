@@ -230,14 +230,19 @@ export function PostList({ provinceId, regionId }: { provinceId: number; regionI
   useEffect(() => {
     if (!provinceName) return;
 
+    console.log('🧪 Filtro sponsor:', { provinceName, regionName });
+
     const fetchSponsor = async () => {
       const { data, error } = await supabase
         .from('sponsor_announcements')
         .select('text, link')
         .eq('active', true)
-        .eq('province', 'Verona') // oppure usa provinceName per dinamico
+        .or(`province.eq.${provinceName},and(region.eq.${regionName},province.is.null),and(country.eq.IT,region.is.null,province.is.null),and(country.is.null,region.is.null,province.is.null)`)
+        .order('province', { ascending: false })
+        .order('region', { ascending: false })
+        .limit(1)
         .maybeSingle();
-
+    
       if (error) {
         console.error('Errore caricamento sponsor:', error);
       } else {
