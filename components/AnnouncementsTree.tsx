@@ -272,25 +272,6 @@ export function PostList({
   const inputRef = useRef<HTMLInputElement>(null);
   const clickTimers = useRef<{ [key: number]: NodeJS.Timeout }>({});
 
-  const handleClick = (postId: number) => {
-    const post = posts?.find(p => p.id === postId);
-    if (post?.closed) return;
-
-    if (clickTimers.current[postId]) {
-      clearTimeout(clickTimers.current[postId]);
-      delete clickTimers.current[postId];
-      setCommenting(postId);
-    } else {
-      clickTimers.current[postId] = setTimeout(() => {
-        setExpanded(prev =>
-          prev.includes(postId)
-            ? prev.filter(x => x !== postId)
-            : [...prev, postId]
-        );
-        delete clickTimers.current[postId];
-      }, 300);
-    }
-  };
 
   useEffect(() => {
     if (creatingType && inputRef.current) inputRef.current.focus();
