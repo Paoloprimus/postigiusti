@@ -40,12 +40,14 @@ export default function ProfilePage() {
   const [invites, setInvites] = useState<Invite[]>([]);
   const [myListings, setMyListings] = useState<Listing[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [nickname, setNickname] = useState<string | null>(null);
 
   useEffect(() => {
     if (session) {
       fetchInvites();
       fetchMyListings();
       fetchMessages();
+      fetchNickname();
     }
   }, [session]);
 
@@ -79,6 +81,18 @@ export default function ProfilePage() {
     if (!error && data) setMessages(data);
   }
 
+  async function fetchNickname() {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('nickname')
+      .eq('id', session?.user.id)
+      .single();
+
+    if (!error && data) {
+      setNickname(data.nickname);
+    }
+  }
+
   if (!session) {
     return (
       <Layout>
@@ -88,7 +102,6 @@ export default function ProfilePage() {
   }
 
   const user = session.user;
-  const nickname = user.user_metadata?.nickname || '—';
 
   return (
     <Layout>
@@ -99,7 +112,7 @@ export default function ProfilePage() {
           <h2 className="text-xl font-semibold mb-2">Dati personali</h2>
           <div className="bg-gray-100 p-4 rounded">
             <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Nickname:</strong> {nickname}</p>
+            <p><strong>Nickname:</strong> {nickname || '—'}</p>
             <p><strong>Data iscrizione:</strong> {new Date(user.created_at!).toLocaleDateString()}</p>
           </div>
         </section>
