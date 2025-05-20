@@ -3,8 +3,31 @@
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react';
-import { Post, Invite, Message } from '../lib/types'; // assicurati che questi tipi esistano
 import ListingCard from '../components/ListingCard';
+
+type Invite = {
+  id: string;
+  email: string;
+  used: boolean;
+  created_at: string;
+  created_by: string;
+};
+
+type Post = {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  author: string;
+  // puoi aggiungere altri campi se ListingCard li richiede
+};
+
+type Message = {
+  id: string;
+  content: string;
+  created_at: string;
+  recipient: string;
+};
 
 export default function ProfilePage() {
   const session = useSession();
