@@ -44,10 +44,25 @@ async function handleCreateInvite(req, res, user) {
   const { email } = req.body;
   const token = uuidv4();
 
+  // ✅ Controlla quanti inviti ha già creato l'utente
+  const { data: existingInvites, error: inviteCheckError } = await supabase
+    .from('invites')
+    .select('id', { count: 'exact', head: true })
+    .eq('invited_by', user.id);
+
+  if (inviteCheckError) {
+    console.error('❌ Errore controllo inviti:', inviteCheckError);
+    return res.status(500).json({ error: 'Errore durante il controllo inviti esistenti.' });
+  }
+
+  if ((existingInvites?.length || 0) >= 3) {
+    return res.status(403).json({ error: 'Hai raggiunto il limite massimo di 3 inviti.' });
+  }
+
   const { data, error } = await supabase
     .from('invites')
     .insert({
-      invited_by: user.id, // ✅ ora sicuro che user è l'oggetto corretto
+      invited_by: user.id,
       email,
       token,
       used: false
