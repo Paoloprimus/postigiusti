@@ -235,12 +235,7 @@ function PostList({ provinceId, regionId }: { provinceId: number; regionId: numb
         .from('sponsor_announcements')
         .select('text, link')
         .eq('active', true)
-        .or(`
-          (province.eq.${provinceName}),
-          (region.eq.${regionName}, province.is.null),
-          (country.eq.IT, region.is.null, province.is.null),
-          (country.is.null, region.is.null, province.is.null)
-        `)
+        .or(`(province.eq.${provinceName}),(region.eq.${regionName},province.is.null),(country.eq.IT,region.is.null,province.is.null),(country.is.null,region.is.null,province.is.null)`)
         .order('province', { ascending: false })
         .order('region', { ascending: false })
         .limit(1)
