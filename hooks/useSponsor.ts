@@ -2,13 +2,25 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-export function useSponsor() {
+export function useSponsor(regionId: number | null, provinceId: number | null) {
   const [sponsor, setSponsor] = useState<{ text: string; link: string | null } | null>(null);
 
   useEffect(() => {
     const fetchSponsor = async () => {
-      const province = localStorage.getItem('selectedProvince')?.toLowerCase() ?? null;
-      const region = localStorage.getItem('selectedRegionName')?.toLowerCase() ?? null;
+      const { data: regionData } = await supabase
+        .from('regions')
+        .select('name')
+        .eq('id', regionId)
+        .single();
+
+      const { data: provinceData } = await supabase
+        .from('provinces')
+        .select('name')
+        .eq('id', provinceId)
+        .single();
+
+      const regionName = regionData?.name?.toLowerCase() ?? null;
+      const provinceName = provinceData?.name?.toLowerCase() ?? null;
 
       const { data, error } = await supabase
         .from('sponsor_announcements')
@@ -29,16 +41,16 @@ export function useSponsor() {
       );
 
       const regional = data.find(
-        (s) => clean(s.region) === region && !clean(s.province)
+        (s) => clean(s.region) === regionName && !clean(s.province)
       );
 
-      const local = data.find((s) => clean(s.province) === province);
+      const local = data.find((s) => clean(s.province) === provinceName);
 
       setSponsor(local ?? regional ?? national ?? null);
     };
 
     fetchSponsor();
-  }, []);
+  }, [regionId, provinceId]);
 
   return sponsor;
 }
