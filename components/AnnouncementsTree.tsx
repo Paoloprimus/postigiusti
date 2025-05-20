@@ -48,7 +48,6 @@ export default function AnnouncementsTree() {
   );
   const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
   const [selectedProvince, setSelectedProvince] = useState<number | null>(null);
-  const [sponsor, setSponsor] = useState<{ text: string; link: string | null } | null>(null);
   const sponsor = useSponsor();
 
   useEffect(() => {
