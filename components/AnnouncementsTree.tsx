@@ -244,12 +244,17 @@ const fetchSponsor = async () => {
     return;
   }
 
-  // 1. Sponsor nazionale
+  const clean = (val: string | null) =>
+    typeof val === 'string' ? val.trim().toLowerCase() : null;
+
+  const region = clean(regionName);
+  const province = clean(provinceName);
+
   const national = data.find(
     (s) =>
-      s.country === 'IT' &&
-      s.region === null &&
-      s.province === null
+      clean(s.country) === 'it' &&
+      clean(s.region) === null &&
+      clean(s.province) === null
   );
 
   if (national) {
@@ -258,11 +263,10 @@ const fetchSponsor = async () => {
     return;
   }
 
-  // 2. Sponsor regionale
   const regional = data.find(
     (s) =>
-      s.region === regionName &&
-      s.province === null
+      clean(s.region) === region &&
+      clean(s.province) === null
   );
 
   if (regional) {
@@ -271,10 +275,8 @@ const fetchSponsor = async () => {
     return;
   }
 
-  // 3. Sponsor provinciale
   const local = data.find(
-    (s) =>
-      s.province === provinceName
+    (s) => clean(s.province) === province
   );
 
   if (local) {
@@ -283,10 +285,10 @@ const fetchSponsor = async () => {
     return;
   }
 
-  // 4. Nessuno trovato
   console.log('⚠️ Nessuno sponsor disponibile');
   setSponsor(null);
 };
+
 
 
     fetchSponsor();
