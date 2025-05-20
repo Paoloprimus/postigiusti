@@ -48,7 +48,7 @@ export default function AnnouncementsTree() {
   );
   const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
   const [selectedProvince, setSelectedProvince] = useState<number | null>(null);
-  const sponsor = useSponsor();
+  const sponsor = useSponsor(selectedRegion, selectedProvince);
 
   useEffect(() => {
     const savedRegion = localStorage.getItem('selectedRegion');
