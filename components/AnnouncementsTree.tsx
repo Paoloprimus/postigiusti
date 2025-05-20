@@ -233,18 +233,39 @@ export function PostList({ provinceId, regionId }: { provinceId: number; regionI
     console.log('🧪 Filtro sponsor:', { provinceName, regionName });
 
     const fetchSponsor = async () => {
+      console.log('🧪 Filtro sponsor:', { provinceName, regionName });
+    
+      const clauses = [];
+    
+      if (provinceName) {
+        clauses.push(`province.eq.${provinceName}`);
+      }
+    
+      if (regionName && !provinceName) {
+        clauses.push(`and(region.eq.${regionName},province.is.null)`);
+      }
+    
+      if (!regionName && !provinceName) {
+        clauses.push(`and(country.eq.IT,region.is.null,province.is.null)`);
+      }
+    
+      // Fallback sempre incluso
+      clauses.push(`and(country.is.null,region.is.null,province.is.null)`);
+    
+      const orClause = clauses.join(',');
+    
       const { data, error } = await supabase
         .from('sponsor_announcements')
         .select('text, link')
         .eq('active', true)
-        .or(`province.eq.${provinceName},and(region.eq.${regionName},province.is.null),and(country.eq.IT,region.is.null,province.is.null),and(country.is.null,region.is.null,province.is.null)`)
+        .or(orClause)
         .order('province', { ascending: false })
         .order('region', { ascending: false })
         .limit(1)
         .maybeSingle();
     
       if (error) {
-        console.error('Errore caricamento sponsor:', error);
+        console.error('❌ Errore caricamento sponsor:', error);
       } else {
         console.log('✅ Sponsor data:', data);
         setSponsor(data);
