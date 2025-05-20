@@ -5,6 +5,7 @@ import Layout from '../components/Layout';
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react';
 import ListingCard from '../components/ListingCard';
 
+// Tipi locali
 type Invite = {
   id: string;
   email: string;
@@ -13,13 +14,16 @@ type Invite = {
   created_by: string;
 };
 
-type Post = {
+type Listing = {
   id: string;
-  title: string;
-  content: string;
+  location: string;
+  description: string;
   created_at: string;
-  author: string;
-  // puoi aggiungere altri campi se ListingCard li richiede
+  user_id: string;
+  price: number;
+  beds: number;
+  contact_info: string;
+  school?: string;
 };
 
 type Message = {
@@ -34,13 +38,13 @@ export default function ProfilePage() {
   const supabase = useSupabaseClient();
 
   const [invites, setInvites] = useState<Invite[]>([]);
-  const [myPosts, setMyPosts] = useState<Post[]>([]);
+  const [myListings, setMyListings] = useState<Listing[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
     if (session) {
       fetchInvites();
-      fetchMyPosts();
+      fetchMyListings();
       fetchMessages();
     }
   }, [session]);
@@ -55,14 +59,14 @@ export default function ProfilePage() {
     if (!error && data) setInvites(data);
   }
 
-  async function fetchMyPosts() {
+  async function fetchMyListings() {
     const { data, error } = await supabase
       .from('posts')
-      .select('*')
+      .select('id, location, description, created_at, user_id, price, beds, contact_info, school')
       .eq('author', session.user.id)
       .order('created_at', { ascending: false });
 
-    if (!error && data) setMyPosts(data);
+    if (!error && data) setMyListings(data);
   }
 
   async function fetchMessages() {
@@ -126,10 +130,10 @@ export default function ProfilePage() {
         {/* I TUOI ANNUNCI */}
         <section>
           <h2 className="text-xl font-semibold mb-2">I tuoi annunci</h2>
-          {myPosts.length > 0 ? (
+          {myListings.length > 0 ? (
             <div className="space-y-4">
-              {myPosts.map(post => (
-                <ListingCard key={post.id} listing={post} />
+              {myListings.map(listing => (
+                <ListingCard key={listing.id} listing={listing} />
               ))}
             </div>
           ) : (
