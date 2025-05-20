@@ -211,7 +211,8 @@ function ProvinceCrumb({
   ) : null;
 }
 
-function PostList({ provinceId, regionId }: { provinceId: number; regionId: number }) {
+export default function PostList({ provinceId, regionId }: { provinceId: number; regionId: number }) {
+
   const key = `/api/provinces/${provinceId}/posts?limit=5`;
   const { data: posts, error } = useSWR<Post[]>(key, fetcher);
   const [sponsor, setSponsor] = useState<{ text: string; link: string | null } | null>(null);
