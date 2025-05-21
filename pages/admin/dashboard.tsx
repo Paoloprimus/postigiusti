@@ -113,18 +113,26 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteSponsor = async (sponsor: Sponsor) => {
-  const { id, ...rest } = sponsor;
-  const { error: insertError } = await supabase
-    .from('sponsor_history')
-    .insert([{ ...rest, deleted_at: new Date().toISOString() }]);
-
-    if (insertError) return setMessage('❌ Errore salvataggio storico: ' + insertError.message);
-
+    // Rimuoviamo 'active' ma manteniamo 'id' e aggiungiamo 'deleted_at'
+    const { active, ...rest } = sponsor;
+    const cleaned = { ...rest, deleted_at: new Date().toISOString() };
+  
+    // Invia allo storico
+    const { error: insertError } = await supabase
+      .from('sponsor_history')
+      .insert([cleaned]);
+  
+    if (insertError) {
+      setMessage('❌ Errore salvataggio storico: ' + insertError.message);
+      return;
+    }
+  
+    // Elimina dalla tabella attiva
     const { error: deleteError } = await supabase
       .from('sponsor_announcements')
       .delete()
       .eq('id', sponsor.id);
-
+  
     if (deleteError) {
       setMessage('❌ Errore eliminazione: ' + deleteError.message);
     } else {
@@ -132,6 +140,7 @@ export default function AdminDashboard() {
       setSponsors((prev) => prev.filter((s) => s.id !== sponsor.id));
     }
   };
+
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
