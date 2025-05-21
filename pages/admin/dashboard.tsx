@@ -113,7 +113,11 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteSponsor = async (sponsor: Sponsor) => {
-    const { error: insertError } = await supabase.from('sponsor_history').insert([{ ...sponsor }]);
+  const { id, active, ...rest } = sponsor;
+  const { error: insertError } = await supabase
+    .from('sponsor_history')
+    .insert([{ ...rest, deleted_at: new Date().toISOString() }]);
+
     if (insertError) return setMessage('❌ Errore salvataggio storico: ' + insertError.message);
 
     const { error: deleteError } = await supabase
