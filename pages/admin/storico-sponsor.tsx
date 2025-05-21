@@ -1,6 +1,7 @@
 // pages/admin/storico-sponsor.tsx
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import { supabase } from '../../lib/supabase';
 import Layout from '../../components/Layout';
 
@@ -16,9 +17,34 @@ interface Sponsor {
 }
 
 export default function StoricoSponsor() {
+  const router = useRouter();
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // ✅ Controllo accesso admin
+  useEffect(() => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+
+      if (!user) {
+        router.push('/admin-login');
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || profile?.role !== 'admin') {
+        router.push('/admin-login');
+        return;
+      }
+    })();
+  }, [router]);
 
   useEffect(() => {
     const loadSponsors = async () => {
