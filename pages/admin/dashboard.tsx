@@ -113,7 +113,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteSponsor = async (sponsor: Sponsor) => {
-  const { id, active, ...rest } = sponsor;
+  const { id, ...rest } = sponsor;
   const { error: insertError } = await supabase
     .from('sponsor_history')
     .insert([{ ...rest, deleted_at: new Date().toISOString() }]);
