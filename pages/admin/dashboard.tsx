@@ -73,7 +73,7 @@ export default function AdminDashboard() {
 
       const { data: allSponsors } = await supabase
         .from('sponsor_announcements')
-        .select('*')
+        .select('id, country, region, province, text, link, created_at')
         .order('created_at', { ascending: false });
       setSponsors(allSponsors || []);
     })();
