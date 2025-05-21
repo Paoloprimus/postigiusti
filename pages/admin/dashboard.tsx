@@ -1,5 +1,14 @@
 // pages/admin/dashboard.tsx
 
+<div className="mb-4">
+  <a
+    href="/admin/storico-sponsor"
+    className="text-sm text-blue-600 hover:underline"
+  >
+    📜 Vai allo storico degli annunci
+  </a>
+</div>
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '../../lib/supabase';
