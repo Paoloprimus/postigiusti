@@ -132,109 +132,163 @@ export default function AdminDashboard() {
     router.push('/');
   };
 
-  return (
-    <Layout>
-      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
+return (
+  <Layout>
+    <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
 
-      <div className="p-4 border rounded bg-gray-50 max-w-xl mb-8">
-        <h2 className="text-lg font-bold mb-2">Gestione Annunci Sponsor</h2>
+    <div className="p-4 border rounded bg-gray-50 max-w-xl mb-8">
+      <h2 className="text-lg font-bold mb-2">Gestione Annunci Sponsor</h2>
 
-        <label className="block mb-1 font-medium">Livello geografico</label>
-        <select
-          className="mb-2 border p-1 w-full"
-          value={level}
-          onChange={(e) => setLevel(e.target.value as any)}
-        >
-          <option value="national">Italia</option>
-          <option value="region">Regione</option>
-          <option value="province">Provincia</option>
-        </select>
+      <label className="block mb-1 font-medium">Livello geografico</label>
+      <select
+        className="mb-2 border p-1 w-full"
+        value={level}
+        onChange={(e) => setLevel(e.target.value as any)}
+      >
+        <option value="national">Italia</option>
+        <option value="region">Regione</option>
+        <option value="province">Provincia</option>
+      </select>
 
-        {level !== 'national' && (
-          <input
-            className="mb-2 border p-1 w-full"
-            placeholder="Regione es. Veneto"
-            value={region}
-            onChange={(e) => setRegion(e.target.value)}
-          />
-        )}
-
-        {level === 'province' && (
-          <input
-            className="mb-2 border p-1 w-full"
-            placeholder="Provincia es. Verona"
-            value={province}
-            onChange={(e) => setProvince(e.target.value)}
-          />
-        )}
-
-        <textarea
-          className="mb-2 border p-1 w-full"
-          rows={3}
-          placeholder="Testo dell'annuncio (obbligatorio)"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-
+      {level !== 'national' && (
         <input
           className="mb-2 border p-1 w-full"
-          placeholder="Link (opzionale)"
-          value={link}
-          onChange={(e) => setLink(e.target.value)}
+          placeholder="Regione es. Veneto"
+          value={region}
+          onChange={(e) => setRegion(e.target.value)}
         />
+      )}
 
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          onClick={handleSubmitSponsor}
-        >
-          Salva annuncio
-        </button>
+      {level === 'province' && (
+        <input
+          className="mb-2 border p-1 w-full"
+          placeholder="Provincia es. Verona"
+          value={province}
+          onChange={(e) => setProvince(e.target.value)}
+        />
+      )}
 
-        {message && <p className="mt-2 text-sm">{message}</p>}
-      </div>
+      <textarea
+        className="mb-2 border p-1 w-full"
+        rows={3}
+        placeholder="Testo dell'annuncio (obbligatorio)"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
 
-      <h2 className="text-xl font-semibold mt-6">Annunci Esistenti</h2>
-      <table className="w-full text-left border mb-10">
-        <thead>
-          <tr>
-            <th className="px-2 py-1">Destinazione</th>
-            <th className="px-2 py-1">Testo</th>
-            <th className="px-2 py-1">Link</th>
-            <th className="px-2 py-1">Creato il</th>
-            <th className="px-2 py-1">Azioni</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sponsors.map((s) => (
-            <tr key={s.id} className="border-t">
-              <td className="px-2 py-1">{s.province ?? s.region ?? s.country ?? '—'}</td>
-              <td className="px-2 py-1">{s.text}</td>
-              <td className="px-2 py-1">
-                {s.link ? (
-                  <a
-                    href={s.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    {s.link}
-                  </a>
-                ) : (
-                  '—'
-                )}
-              </td>
-              <td className="px-2 py-1">{new Date(s.created_at).toLocaleString('it-IT')}</td>
-              <td className="px-2 py-1">
-                <button
-                  className="text-sm text-red-600 hover:underline"
-                  onClick={() => handleDeleteSponsor(s)}
+      <input
+        className="mb-2 border p-1 w-full"
+        placeholder="Link (opzionale)"
+        value={link}
+        onChange={(e) => setLink(e.target.value)}
+      />
+
+      <button
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        onClick={handleSubmitSponsor}
+      >
+        Salva annuncio
+      </button>
+
+      {message && <p className="mt-2 text-sm">{message}</p>}
+    </div>
+
+    <h2 className="text-xl font-semibold mt-6">Annunci Esistenti</h2>
+    <table className="w-full text-left border mb-10">
+      <thead>
+        <tr>
+          <th className="px-2 py-1">Destinazione</th>
+          <th className="px-2 py-1">Testo</th>
+          <th className="px-2 py-1">Link</th>
+          <th className="px-2 py-1">Creato il</th>
+          <th className="px-2 py-1">Azioni</th>
+        </tr>
+      </thead>
+      <tbody>
+        {sponsors.map((s) => (
+          <tr key={s.id} className="border-t">
+            <td className="px-2 py-1">{s.province ?? s.region ?? s.country ?? '—'}</td>
+            <td className="px-2 py-1">{s.text}</td>
+            <td className="px-2 py-1">
+              {s.link ? (
+                <a
+                  href={s.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
                 >
-                  Elimina
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  {s.link}
+                </a>
+              ) : (
+                '—'
+              )}
+            </td>
+            <td className="px-2 py-1">
+              {new Date(s.created_at).toLocaleString('it-IT')}
+            </td>
+            <td className="px-2 py-1">
+              <button
+                className="text-sm text-red-600 hover:underline"
+                onClick={() => handleDeleteSponsor(s)}
+              >
+                Elimina
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
 
-      ...
+    <h2 className="text-xl font-semibold mt-6">Membri</h2>
+    <table className="w-full text-left border">
+      <thead>
+        <tr>
+          <th className="px-2 py-1">Email</th>
+          <th className="px-2 py-1">Nickname</th>
+          <th className="px-2 py-1">Invitati</th>
+          <th className="px-2 py-1">Azioni</th>
+        </tr>
+      </thead>
+      <tbody>
+        {profiles.map((p) => (
+          <tr key={p.id} className="border-t">
+            <td className="px-2 py-1">{p.email}</td>
+            <td className="px-2 py-1">{p.nickname}</td>
+            <td className="px-2 py-1">
+              {invites.filter((inv) => inv.invited_by === p.id).length}
+            </td>
+            <td className="px-2 py-1 space-x-2">
+              <button className="text-sm text-red-600">Banna</button>
+              <button className="text-sm text-blue-600">Msg</button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    <h2 className="text-xl font-semibold mt-6">Nuovi Membri</h2>
+    <table className="w-full text-left border">
+      <thead>
+        <tr>
+          <th className="px-2 py-1">Email</th>
+          <th className="px-2 py-1">Nickname</th>
+          <th className="px-2 py-1">Invitato da</th>
+          <th className="px-2 py-1">Azioni</th>
+        </tr>
+      </thead>
+      <tbody>
+        {pendingProfiles.map((p) => (
+          <tr key={p.id} className="border-t">
+            <td className="px-2 py-1">{p.email}</td>
+            <td className="px-2 py-1">{p.nickname}</td>
+            <td className="px-2 py-1">{p.invited_by}</td>
+            <td className="px-2 py-1 space-x-2">
+              <button className="text-sm text-green-600">Approva</button>
+              <button className="text-sm text-red-600">Rifiuta</button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </Layout>
+);
