@@ -39,6 +39,15 @@ export default function StoricoSponsor() {
   return (
     <Layout>
       <h1 className="text-2xl font-bold mb-4">Storico Annunci Sponsor</h1>
+      <h1 className="text-2xl font-bold mb-4 flex items-center gap-4">
+        Storico Annunci Sponsor
+        <a
+          href="/admin/dashboard"
+          className="text-blue-600 text-sm underline hover:text-blue-800"
+        >
+          Torna alla Dashboard
+        </a>
+      </h1>
 
       {loading ? (
         <p>Caricamento in corso...</p>
