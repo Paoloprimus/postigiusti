@@ -22,11 +22,22 @@ type Invite = {
   created_at: string;
 };
 
+type Sponsor = {
+  id: string;
+  country: string | null;
+  region: string | null;
+  province: string | null;
+  text: string;
+  link: string | null;
+  created_at: string;
+};
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [pendingProfiles, setPendingProfiles] = useState<Profile[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
+  const [sponsors, setSponsors] = useState<Sponsor[]>([]);
 
   const [level, setLevel] = useState<'national' | 'region' | 'province'>('national');
   const [country, setCountry] = useState('IT');
@@ -38,41 +49,31 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     (async () => {
-      // Controlla sessione
       const {
         data: { session },
       } = await supabase.auth.getSession();
       const user = session?.user;
-      if (!user) {
-        router.push('/admin-login');
-        return;
-      }
+      if (!user) return router.push('/admin-login');
 
-      // Verifica ruolo admin
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
         .single();
-      if (profileError || profile.role !== 'admin') {
-        router.push('/admin-login');
-        return;
-      }
+      if (profileError || profile.role !== 'admin') return router.push('/admin-login');
 
-      // Carica tutti i profili
-      const { data: allProfiles } = await supabase
-        .from('profiles')
-        .select('*');
+      const { data: allProfiles } = await supabase.from('profiles').select('*');
       setProfiles(allProfiles || []);
-      setPendingProfiles(
-        (allProfiles || []).filter((p) => p.role === 'pending')
-      );
+      setPendingProfiles((allProfiles || []).filter((p) => p.role === 'pending'));
 
-      // Carica tutti gli inviti
-      const { data: allInvites } = await supabase
-        .from('invites')
-        .select('*');
+      const { data: allInvites } = await supabase.from('invites').select('*');
       setInvites(allInvites || []);
+
+      const { data: allSponsors } = await supabase
+        .from('sponsor_announcements')
+        .select('*')
+        .order('created_at', { ascending: false });
+      setSponsors(allSponsors || []);
     })();
   }, [router]);
 
@@ -106,6 +107,23 @@ export default function AdminDashboard() {
       setMessage('✅ Annuncio salvato correttamente!');
       setText('');
       setLink('');
+    }
+  };
+
+  const handleDeleteSponsor = async (sponsor: Sponsor) => {
+    const { error: insertError } = await supabase.from('sponsor_history').insert([{ ...sponsor }]);
+    if (insertError) return setMessage('❌ Errore salvataggio storico: ' + insertError.message);
+
+    const { error: deleteError } = await supabase
+      .from('sponsor_announcements')
+      .delete()
+      .eq('id', sponsor.id);
+
+    if (deleteError) {
+      setMessage('❌ Errore eliminazione: ' + deleteError.message);
+    } else {
+      setMessage('✅ Annuncio eliminato e spostato nello storico.');
+      setSponsors((prev) => prev.filter((s) => s.id !== sponsor.id));
     }
   };
 
@@ -175,79 +193,48 @@ export default function AdminDashboard() {
         {message && <p className="mt-2 text-sm">{message}</p>}
       </div>
 
-      <h2 className="text-xl font-semibold mt-6">Membri</h2>
-      <table className="w-full text-left border">
+      <h2 className="text-xl font-semibold mt-6">Annunci Esistenti</h2>
+      <table className="w-full text-left border mb-10">
         <thead>
           <tr>
-            <th className="px-2 py-1">Email</th>
-            <th className="px-2 py-1">Nickname</th>
-            <th className="px-2 py-1">Invitati</th>
-            <th className="px-2 py-1">Azioni</th>
-          </tr>
-        </thead>
-        <tbody>
-          {profiles.map((p) => (
-            <tr key={p.id} className="border-t">
-              <td className="px-2 py-1">{p.email}</td>
-              <td className="px-2 py-1">{p.nickname}</td>
-              <td className="px-2 py-1">
-                {invites.filter((inv) => inv.invited_by === p.id).length}
-              </td>
-              <td className="px-2 py-1 space-x-2">
-                <button className="text-sm text-red-600">Banna</button>
-                <button className="text-sm text-blue-600">Msg</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <h2 className="text-xl font-semibold mt-6">Nuovi Membri</h2>
-      <table className="w-full text-left border">
-        <thead>
-          <tr>
-            <th className="px-2 py-1">Email</th>
-            <th className="px-2 py-1">Nickname</th>
-            <th className="px-2 py-1">Invitato da</th>
-            <th className="px-2 py-1">Azioni</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pendingProfiles.map((p) => (
-            <tr key={p.id} className="border-t">
-              <td className="px-2 py-1">{p.email}</td>
-              <td className="px-2 py-1">{p.nickname}</td>
-              <td className="px-2 py-1">{p.invited_by}</td>
-              <td className="px-2 py-1 space-x-2">
-                <button className="text-sm text-green-600">Approva</button>
-                <button className="text-sm text-red-600">Rifiuta</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <h2 className="text-xl font-semibold mt-6">Inviti Admin</h2>
-      <table className="w-full text-left border">
-        <thead>
-          <tr>
-            <th className="px-2 py-1">Token</th>
+            <th className="px-2 py-1">Destinazione</th>
+            <th className="px-2 py-1">Testo</th>
+            <th className="px-2 py-1">Link</th>
             <th className="px-2 py-1">Creato il</th>
-            <th className="px-2 py-1">Usato da</th>
+            <th className="px-2 py-1">Azioni</th>
           </tr>
         </thead>
         <tbody>
-          {invites.map((inv) => (
-            <tr key={inv.id} className="border-t">
-              <td className="px-2 py-1">{inv.token}</td>
+          {sponsors.map((s) => (
+            <tr key={s.id} className="border-t">
+              <td className="px-2 py-1">{s.province ?? s.region ?? s.country ?? '—'}</td>
+              <td className="px-2 py-1">{s.text}</td>
               <td className="px-2 py-1">
-                {new Date(inv.created_at).toLocaleString('it-IT')}
+                {s.link ? (
+                  <a
+                    href={s.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    {s.link}
+                  </a>
+                ) : (
+                  '—'
+                )}
               </td>
-              <td className="px-2 py-1">{inv.used_by || '-'}</td>
+              <td className="px-2 py-1">{new Date(s.created_at).toLocaleString('it-IT')}</td>
+              <td className="px-2 py-1">
+                <button
+                  className="text-sm text-red-600 hover:underline"
+                  onClick={() => handleDeleteSponsor(s)}
+                >
+                  Elimina
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-    </Layout>
-  );
-}
+
+      ...
