@@ -38,7 +38,6 @@ export default function StoricoSponsor() {
 
   return (
     <Layout>
-      <h1 className="text-2xl font-bold mb-4">Storico Annunci Sponsor</h1>
       <h1 className="text-2xl font-bold mb-4 flex items-center gap-4">
         Storico Annunci Sponsor
         <a
