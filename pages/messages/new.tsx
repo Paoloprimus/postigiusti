@@ -13,24 +13,39 @@ export default function NewMessagePage() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    const to = router.query.to as string;
-    if (to) {
-      setNickname(to);
-      // Cerca l'utente a partire dal nickname
-      supabase
-        .from('profiles')
-        .select('id')
-        .eq('nickname', to)
-        .single()
-        .then(({ data, error }) => {
-          if (error || !data) {
-            setError('Utente non trovato.');
-          } else {
-            setReceiverId(data.id);
-          }
-        });
-    }
-  }, [router.query.to]);
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+
+      if (!user) {
+        router.replace('/login');
+        return;
+      }
+
+      if (!user.email_confirmed_at) {
+        router.replace('/email-verifica'); // oppure mostra un messaggio
+        return;
+      }
+
+      const to = router.query.to as string;
+      if (to) {
+        setNickname(to);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('nickname', to)
+          .single();
+
+        if (error || !data) {
+          setError('Utente non trovato.');
+        } else {
+          setReceiverId(data.id);
+        }
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   const handleSend = async () => {
     setError('');
@@ -41,10 +56,7 @@ export default function NewMessagePage() {
       return;
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user || !receiverId) {
       setError('Errore nel recupero degli utenti.');
       return;
