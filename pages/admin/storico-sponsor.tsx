@@ -44,7 +44,7 @@ export default function StoricoSponsor() {
           href="/admin/dashboard"
           className="text-blue-600 text-sm underline hover:text-blue-800"
         >
-          Torna alla Dashboard
+          Torna alla Admin Dashboard
         </a>
       </h1>
 
