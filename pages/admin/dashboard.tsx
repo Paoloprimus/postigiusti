@@ -292,6 +292,4 @@ return (
     </table>
   </Layout>
 );
-  </Layout>
-);
 }
