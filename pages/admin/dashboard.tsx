@@ -1,13 +1,6 @@
 // pages/admin/dashboard.tsx
 
-<div className="mb-4">
-  <a
-    href="/admin/storico-sponsor"
-    className="text-sm text-blue-600 hover:underline"
-  >
-    📜 Vai allo storico degli annunci
-  </a>
-</div>
+
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
@@ -248,6 +241,15 @@ return (
       </tbody>
     </table>
 
+    <div className="mb-4">
+      <a
+        href="/admin/storico-sponsor"
+        className="text-sm text-blue-600 hover:underline"
+      >
+        📜 Vai allo storico degli annunci
+      </a>
+    </div>
+    
     <h2 className="text-xl font-semibold mt-6">Membri</h2>
     <table className="w-full text-left border">
       <thead>
