@@ -1,6 +1,6 @@
 // pages/signup.tsx
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '../lib/supabase';
 import Layout from '../components/Layout';
@@ -12,6 +12,10 @@ export default function Signup() {
   const [email, setEmail] = useState('');
   const [nickname, setNickname] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [fiscalCode, setFiscalCode] = useState('');
+  const [role, setRole] = useState('precari');
+  const [agencyName, setAgencyName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
@@ -20,18 +24,11 @@ export default function Signup() {
     e.preventDefault();
     setError('');
 
-    // 🔍 Log token e email
-    console.log('🔍 Verifica invito per:', { token, email });
-
-    // Query inviti
     const { data: invites, error: inviteErr } = await supabase
       .from('invites')
       .select('*')
       .eq('token', token.trim())
       .eq('used', false);
-
-    console.log('📦 Inviti trovati:', invites);
-    console.log('❌ Errore query:', inviteErr);
 
     const invite = invites?.[0];
 
@@ -45,23 +42,20 @@ export default function Signup() {
       return;
     }
 
-  // 🔍 Controllo unicità nickname
-  const { data: existingNick, error: nickError } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('nickname', nickname)
-    .maybeSingle();
-  
-  if (existingNick) {
-    setError('Questo nickname è già in uso. Scegline un altro.');
-    return;
-  }
-  
-  setLoading(true);
-  
-  // Crea account
-  const { data: authData, error: authErr } =
-    await supabase.auth.signUp({
+    const { data: existingNick } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('nickname', nickname)
+      .maybeSingle();
+
+    if (existingNick) {
+      setError('Questo nickname è già in uso. Scegline un altro.');
+      return;
+    }
+
+    setLoading(true);
+
+    const { data: authData, error: authErr } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -69,25 +63,25 @@ export default function Signup() {
       },
     });
 
-
     if (authErr) {
       setError('Errore registrazione: ' + authErr.message);
       setLoading(false);
       return;
     }
 
-    // Segna invito come usato
     await supabase
       .from('invites')
       .update({ used: true, used_by: authData.user?.id })
       .eq('token', token);
 
-    // Crea profilo
     await supabase.from('profiles').insert({
       id: authData.user?.id,
       email,
       nickname,
-      role: 'member',
+      role,
+      full_name: fullName,
+      codice_fiscale: fiscalCode,
+      agency_name: role === 'agenzie' ? agencyName : null,
       invited_by: invite.invited_by,
     });
 
@@ -112,6 +106,7 @@ export default function Signup() {
           <>
             {error && <p className="text-red-600 mb-4">{error}</p>}
             <form onSubmit={handleSignup} className="space-y-4">
+
               <div>
                 <label className="block text-sm mb-1">Token di invito</label>
                 <input
@@ -122,6 +117,56 @@ export default function Signup() {
                   required
                 />
               </div>
+
+              <div>
+                <label className="block text-sm mb-1">Nome e Cognome</label>
+                <input
+                  type="text"
+                  className="w-full border px-3 py-2 rounded"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">Codice Fiscale</label>
+                <input
+                  type="text"
+                  className="w-full border px-3 py-2 rounded"
+                  value={fiscalCode}
+                  onChange={(e) => setFiscalCode(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">Categoria</label>
+                <select
+                  className="w-full border px-3 py-2 rounded"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  required
+                >
+                  <option value="precari">Precari</option>
+                  <option value="proprietari">Proprietari</option>
+                  <option value="agenzie">Agenzie</option>
+                </select>
+              </div>
+
+              {role === 'agenzie' && (
+                <div>
+                  <label className="block text-sm mb-1">Nome Agenzia</label>
+                  <input
+                    type="text"
+                    className="w-full border px-3 py-2 rounded"
+                    value={agencyName}
+                    onChange={(e) => setAgencyName(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm mb-1">Email</label>
                 <input
@@ -132,6 +177,7 @@ export default function Signup() {
                   required
                 />
               </div>
+
               <div>
                 <label className="block text-sm mb-1">Nickname</label>
                 <input
@@ -142,6 +188,7 @@ export default function Signup() {
                   required
                 />
               </div>
+
               <div>
                 <label className="block text-sm mb-1">Password</label>
                 <input
@@ -152,6 +199,7 @@ export default function Signup() {
                   required
                 />
               </div>
+
               <button
                 type="submit"
                 disabled={loading}
