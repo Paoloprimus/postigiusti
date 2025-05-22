@@ -63,14 +63,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         author: user.id,
         type,
       })
-      .select(`
-        id,
-        content,
-        author,
-        created_at,
-        province_id,
-        type
-      `);
+        .select(`
+          id,
+          content,
+          author,
+          created_at,
+          province_id,
+          type,
+          closed,
+          profiles (
+            role,
+            nickname,
+            agency_name
+          )
+        `)
 
     if (error) {
       console.error('Supabase POST error:', error);
