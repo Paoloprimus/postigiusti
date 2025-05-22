@@ -21,6 +21,11 @@ export type Post = {
   nickname?: string;
   email?: string;
   closed?: boolean;
+  profiles?: {
+    role: string;
+    nickname: string;
+    agency_name?: string;
+  };
 };
 
 export type CommentWithAuthor = {
@@ -403,11 +408,17 @@ export function PostList({
               {post.closed ? <s>{post.content}</s> : post.content}
             </span>
             <small className="ml-2 text-gray-500">
-              [<Link href={`/messages/new?to=${post.nickname}`}>
-                <a className="text-blue-600 hover:underline">{post.nickname ?? post.email}</a>
+              [<Link href={`/messages/new?to=${post.profiles?.nickname}`}>
+                <a className="text-blue-600 hover:underline">
+                  {post.profiles?.role === 'agenzie'
+                    ? `Agenzia ${post.profiles?.agency_name}`
+                    : post.profiles?.role === 'proprietari'
+                    ? `Proprietario ${post.profiles?.nickname}`
+                    : post.profiles?.nickname ?? post.email}
+                </a>
               </Link>, {timeAgo(post.created_at)}]
             </small>
-
+            
             {!post.closed && userId === post.author && (
               <button
                 className="ml-2 text-red-500 text-xs hover:underline"
