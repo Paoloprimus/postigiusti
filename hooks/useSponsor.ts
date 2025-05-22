@@ -31,7 +31,7 @@ export function useSponsor(regionId: number | null, provinceId: number | null) {
 
       const { data: announcements, error } = await supabase
         .from('sponsor_announcements')
-        .select('text, link, country, region, province')
+        .select('text, link, image_url, country, region, province')
         .eq('active', true);
 
       if (error) {
