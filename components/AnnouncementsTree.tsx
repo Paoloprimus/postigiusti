@@ -220,7 +220,7 @@ export function PostList({
 }: {
   provinceId: number;
   regionId: number;
-  sponsor: { text: string; link: string | null } | null;
+  sponsor: { text: string; link: string | null; image_url?: string | null } | null;
 }) {
 
   const key = `/api/provinces/${provinceId}/posts?limit=5`;
