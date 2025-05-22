@@ -349,23 +349,28 @@ export function PostList({
 
   return (
     <ul className="pl-8 space-y-2">
-      {sponsor && (
-        <li className="text-sm uppercase font-semibold text-indigo-700 bg-yellow-100 border border-yellow-500 p-2 rounded">
-          <div className="mb-1">🎯 SPONSOR ATTIVO:</div>
-          {sponsor.link ? (
-            <a
-              href={sponsor.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:underline text-blue-600"
-            >
-              {sponsor.text}
-            </a>
+    {sponsor && (
+      <li className="bg-yellow-100 border border-yellow-500 p-2 rounded">
+        <div className="mb-1 text-sm uppercase font-semibold text-indigo-700">🎯 SPONSOR ATTIVO:</div>
+    
+        {sponsor.image_url && (
+          <img
+            src={sponsor.image_url}
+            alt="Sponsor"
+            className="w-full max-h-40 object-contain mb-2"
+          />
+        )}
+    
+        {sponsor.text && sponsor.text !== '-' && (
+          sponsor.link ? (
+            <a href={sponsor.link} className="text-blue-600 hover:underline">{sponsor.text}</a>
           ) : (
-            <span>{sponsor.text ?? '⚠️ testo mancante'}</span>
-          )}
-        </li>
-      )}
+            <span className="text-sm">{sponsor.text}</span>
+          )
+        )}
+      </li>
+    )}
+
 
       <li className="space-x-4">
         <button className="text-green-700 hover:underline text-sm" onClick={() => setCreatingType('offro')}>+ OFFRO</button>
