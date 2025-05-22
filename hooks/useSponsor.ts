@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 export function useSponsor(regionId: number | null, provinceId: number | null) {
-  const [sponsor, setSponsor] = useState<{ text: string; link: string | null } | null>(null);
+  const [sponsor, setSponsor] = useState<{ text: string; link: string | null; image_url?: string | null } | null>(null);
+
 
   useEffect(() => {
     const fetchSponsor = async () => {
@@ -48,7 +49,11 @@ export function useSponsor(regionId: number | null, provinceId: number | null) {
         ?? announcements.find((s) => clean(s.country) === 'it' && !s.region && !s.province);
 
       if (match) {
-        setSponsor({ text: match.text, link: match.link });
+        setSponsor({
+          text: match.text,
+          link: match.link,
+          image_url: match.image_url ?? null,
+        });
       } else {
         setSponsor(null);
       }
