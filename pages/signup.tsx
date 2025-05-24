@@ -75,6 +75,7 @@ export default function Signup() {
       .eq('token', token);
 
     await supabase.from('profiles').insert({
+      console.log("🧾 Inserimento profilo:", {
       id: authData.user?.id,
       email,
       nickname,
