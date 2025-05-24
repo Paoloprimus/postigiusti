@@ -74,21 +74,24 @@ export default function Signup() {
       .update({ used: true, used_by: authData.user?.id })
       .eq('token', token);
 
-const profileData = {
-  id: authData.user?.id,
-  email,
-  nickname,
-  role,
-  full_name: fullName,
-  codice_fiscale: fiscalCode,
-  agency_name: role === 'agenzie' ? agencyName : null,
-  invited_by: invite.invited_by,
-};
+    const profileData = {
+      id: authData.user?.id,
+      email,
+      nickname,
+      role,
+      full_name: fullName,
+      codice_fiscale: fiscalCode,
+      agency_name: role === 'agenzie' ? agencyName : null,
+      invited_by: invite.invited_by,
+    };
 
-console.log("🧾 Inserimento profilo:", profileData);
+    console.log('🧾 Inserimento profilo:', profileData);
 
-await supabase.from('profiles').insert(profileData);
+    await supabase.from('profiles').insert(profileData);
 
+    setLoading(false);
+    setIsComplete(true);
+  };
 
   return (
     <Layout title="Posti Giusti – Registrazione">
