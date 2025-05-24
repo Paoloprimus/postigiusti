@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
+import { useRouter } from 'next/router';
 import { v4 as uuidv4 } from 'uuid';
 
 interface LocalInvite {
@@ -24,6 +25,18 @@ export default function GenerateInvite() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [copySuccess, setCopySuccess] = useState('');
+  const router = useRouter();
+
+  // ✅ Blocco accesso se non autenticato
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/login'); // o altra pagina desiderata
+      }
+    };
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     fetchInvites();
